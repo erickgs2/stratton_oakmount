@@ -1,0 +1,60 @@
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.bot-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.cards-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+
+mat-card {
+  flex: 1;
+  min-width: 160px;
+}
+
+.amount {
+  font-size: 28px;
+  font-weight: 500;
+  margin: 8px 0;
+}
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.error-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f44336;
+  padding: 16px;
+  border: 1px solid #f44336;
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+.positive { color: #4caf50; }
+.negative { color: #f44336; }
+
+.phase2-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 24px;
+  color: #757575;
+}
+
+table { width: 100%; }

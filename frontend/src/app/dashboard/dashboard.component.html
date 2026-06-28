@@ -1,0 +1,100 @@
+<div class="dashboard-header">
+  <h1>Dashboard</h1>
+  <div class="bot-control">
+    <mat-chip-set>
+      <mat-chip [class.active]="isRunning">
+        <mat-icon>{{ isRunning ? 'smart_toy' : 'stop' }}</mat-icon>
+        {{ isRunning ? 'Bot Running' : 'Bot Stopped' }}
+      </mat-chip>
+    </mat-chip-set>
+    <mat-slide-toggle
+      [checked]="isRunning"
+      (change)="toggleBot($event.checked)"
+      color="primary">
+      {{ isRunning ? 'Stop' : 'Start' }} Bot
+    </mat-slide-toggle>
+  </div>
+</div>
+
+<mat-tab-group (selectedIndexChange)="activeMarket = $event === 0 ? 'MX' : 'USA'">
+  <mat-tab label="MX — BMV">
+    <ng-container *ngTemplateOutlet="marketContent"></ng-container>
+  </mat-tab>
+  <mat-tab label="USA — NYSE/Nasdaq">
+    <div class="phase2-notice">
+      <mat-icon>info</mat-icon>
+      Phase 2 — USA market coming soon. Set ACTIVE_MARKET=USA when ready.
+    </div>
+  </mat-tab>
+</mat-tab-group>
+
+<ng-template #marketContent>
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="error" class="error-card">
+    <mat-icon>error</mat-icon>
+    {{ error }} — Is the IBKR Gateway running at localhost:5000?
+  </div>
+
+  <div *ngIf="!loading && !error && portfolio" class="cards-row">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Available Funds</mat-card-title>
+        <mat-card-subtitle>{{ currency }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount">{{ portfolio.summary.availableFunds | number:'1.2-2' }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Buying Power</mat-card-title>
+        <mat-card-subtitle>{{ currency }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount">{{ portfolio.summary.buyingPower | number:'1.2-2' }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Net Liquidation</mat-card-title>
+        <mat-card-subtitle>{{ currency }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount">{{ portfolio.summary.netLiquidation | number:'1.2-2' }}</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <h2 *ngIf="portfolio">Open Positions</h2>
+  <table mat-table [dataSource]="portfolio.positions" *ngIf="portfolio">
+    <ng-container matColumnDef="ticker">
+      <th mat-header-cell *matHeaderCellDef>Symbol</th>
+      <td mat-cell *matCellDef="let row">{{ row.ticker }}</td>
+    </ng-container>
+    <ng-container matColumnDef="position">
+      <th mat-header-cell *matHeaderCellDef>Shares</th>
+      <td mat-cell *matCellDef="let row">{{ row.position }}</td>
+    </ng-container>
+    <ng-container matColumnDef="avgCost">
+      <th mat-header-cell *matHeaderCellDef>Avg Cost</th>
+      <td mat-cell *matCellDef="let row">{{ row.avgCost | number:'1.2-2' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="mktValue">
+      <th mat-header-cell *matHeaderCellDef>Market Value</th>
+      <td mat-cell *matCellDef="let row">{{ row.mktValue | number:'1.2-2' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="unrealizedPnl">
+      <th mat-header-cell *matHeaderCellDef>Unrealized P&L</th>
+      <td mat-cell *matCellDef="let row" [class.positive]="row.unrealizedPnl > 0" [class.negative]="row.unrealizedPnl < 0">
+        {{ row.unrealizedPnl | number:'1.2-2' }}
+      </td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="positionColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: positionColumns;"></tr>
+  </table>
+</ng-template>
