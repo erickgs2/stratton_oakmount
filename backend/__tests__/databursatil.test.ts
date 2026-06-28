@@ -49,11 +49,16 @@ describe('getMXMarketData', () => {
   });
 
   it('throws when the API returns an error status', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-      text: async () => 'Unauthorized',
-    });
+    (global.fetch as jest.Mock)
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => 'Unauthorized',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockHistoricalResponse,
+      });
 
     await expect(getMXMarketData('AMXL')).rejects.toThrow('DataBursatil API error 401');
   });
