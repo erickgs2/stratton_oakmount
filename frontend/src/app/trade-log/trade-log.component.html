@@ -1,0 +1,65 @@
+<h1>Trade Log</h1>
+
+<div class="filters-row">
+  <mat-form-field appearance="outline">
+    <mat-label>Market</mat-label>
+    <mat-select [(ngModel)]="marketFilter" (ngModelChange)="loadTrades()">
+      <mat-option value="">All</mat-option>
+      <mat-option value="MX">MX — BMV</mat-option>
+      <mat-option value="USA">USA — NYSE/Nasdaq</mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Symbol</mat-label>
+    <input matInput [(ngModel)]="symbolFilter" placeholder="e.g. AMXL" (keyup.enter)="loadTrades()">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <button mat-stroked-button (click)="clearFilters()">
+    <mat-icon>clear</mat-icon> Clear
+  </button>
+</div>
+
+<table mat-table [dataSource]="trades" class="full-width">
+  <ng-container matColumnDef="createdAt">
+    <th mat-header-cell *matHeaderCellDef>Date</th>
+    <td mat-cell *matCellDef="let row">{{ row.createdAt | date:'short' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="symbol">
+    <th mat-header-cell *matHeaderCellDef>Symbol</th>
+    <td mat-cell *matCellDef="let row"><strong>{{ row.symbol }}</strong></td>
+  </ng-container>
+  <ng-container matColumnDef="market">
+    <th mat-header-cell *matHeaderCellDef>Market</th>
+    <td mat-cell *matCellDef="let row">{{ row.market }}</td>
+  </ng-container>
+  <ng-container matColumnDef="action">
+    <th mat-header-cell *matHeaderCellDef>Action</th>
+    <td mat-cell *matCellDef="let row">
+      <span [class]="getActionClass(row.action)" class="action-chip">{{ row.action | uppercase }}</span>
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="quantity">
+    <th mat-header-cell *matHeaderCellDef>Qty</th>
+    <td mat-cell *matCellDef="let row">{{ row.quantity }}</td>
+  </ng-container>
+  <ng-container matColumnDef="price">
+    <th mat-header-cell *matHeaderCellDef>Price</th>
+    <td mat-cell *matCellDef="let row">{{ row.price | number:'1.2-2' }}</td>
+  </ng-container>
+  <ng-container matColumnDef="currency">
+    <th mat-header-cell *matHeaderCellDef>Currency</th>
+    <td mat-cell *matCellDef="let row">{{ row.currency }}</td>
+  </ng-container>
+  <ng-container matColumnDef="reason">
+    <th mat-header-cell *matHeaderCellDef>Agent Reason</th>
+    <td mat-cell *matCellDef="let row" class="reason-cell">{{ row.reason }}</td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  <tr *matNoDataRow>
+    <td [colSpan]="displayedColumns.length" class="no-data">No trades found</td>
+  </tr>
+</table>

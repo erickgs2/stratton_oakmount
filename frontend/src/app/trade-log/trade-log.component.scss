@@ -1,0 +1,33 @@
+.filters-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.full-width { width: 100%; }
+
+.action-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.action-buy { background: #e8f5e9; color: #2e7d32; }
+.action-sell { background: #ffebee; color: #c62828; }
+.action-hold { background: #e3f2fd; color: #1565c0; }
+
+.reason-cell {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.no-data {
+  text-align: center;
+  padding: 32px;
+  color: #757575;
+}
