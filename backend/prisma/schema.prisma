@@ -1,0 +1,40 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Trade {
+  id          String   @id @default(cuid())
+  symbol      String
+  market      String   // "MX" | "USA"
+  action      String   // "buy" | "sell" | "hold"
+  quantity    Float
+  price       Float
+  currency    String   // "MXN" | "USD"
+  reason      String
+  ibkrOrderId String?
+  createdAt   DateTime @default(now())
+}
+
+model BotConfig {
+  id           String   @id @default(cuid())
+  market       String   @unique // "MX" | "USA"
+  symbols      String[]
+  capitalLimit Float
+  intervalMin  Int
+  isActive     Boolean  @default(false)
+  updatedAt    DateTime @updatedAt
+}
+
+model AgentLog {
+  id         String   @id @default(cuid())
+  symbol     String
+  market     String
+  marketData Json
+  response   Json
+  executed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
