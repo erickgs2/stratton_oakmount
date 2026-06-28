@@ -70,7 +70,7 @@ describe('IBKRClient', () => {
 
   describe('placeOrder', () => {
     it('returns the orderId for MX market order', async () => {
-      mockHttpsResponse(200, [{ orderId: 'ORDER-001' }]);
+      mockHttpsResponse(200, [{ order_id: 12345 }]);
 
       const orderId = await client.placeOrder({
         conid: 265598,
@@ -79,11 +79,11 @@ describe('IBKRClient', () => {
         market: 'MX',
       });
 
-      expect(orderId).toBe('ORDER-001');
+      expect(orderId).toBe('12345');
     });
 
     it('returns the orderId for USA market order', async () => {
-      mockHttpsResponse(200, [{ orderId: 'ORDER-002' }]);
+      mockHttpsResponse(200, [{ order_id: 12345 }]);
 
       const orderId = await client.placeOrder({
         conid: 4815,
@@ -92,7 +92,7 @@ describe('IBKRClient', () => {
         market: 'USA',
       });
 
-      expect(orderId).toBe('ORDER-002');
+      expect(orderId).toBe('12345');
     });
   });
 

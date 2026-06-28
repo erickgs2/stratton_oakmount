@@ -107,7 +107,7 @@ export class IBKRClient {
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<string> {
-    const result = await this.request<{ orderId: string }[]>(
+    const result = await this.request<{ order_id: number }[]>(
       `/iserver/account/${this.accountId}/orders`,
       {
         method: 'POST',
@@ -127,7 +127,7 @@ export class IBKRClient {
         },
       }
     );
-    return result[0]?.orderId ?? '';
+    return result[0]?.order_id?.toString() ?? '';
   }
 }
 

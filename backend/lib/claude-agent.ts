@@ -82,7 +82,8 @@ Respond with JSON only.`;
 
 export async function runAgentCycle(
   symbol: string,
-  market: 'MX' | 'USA'
+  market: 'MX' | 'USA',
+  capitalLimit?: number
 ): Promise<AgentCycleResult> {
   if (!isMarketOpen(market)) {
     return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
@@ -118,6 +119,9 @@ export async function runAgentCycle(
 
   const currentPosition = positions.find(p => p.ticker === symbol)?.position ?? 0;
   const availableFunds = summary.availableFunds;
+  const effectiveCapital = capitalLimit
+    ? Math.min(availableFunds, capitalLimit)
+    : availableFunds;
 
   // Call Claude
   const message = await anthropic.messages.create({
@@ -129,7 +133,7 @@ export async function runAgentCycle(
         role: 'user',
         content: buildUserPrompt(
           symbol, market, lastPrice, changePct, volume,
-          indicators, currentPosition, availableFunds
+          indicators, currentPosition, effectiveCapital
         ),
       },
     ],
@@ -141,6 +145,17 @@ export async function runAgentCycle(
     decision = JSON.parse(rawText) as ClaudeDecision;
   } catch {
     decision = { action: 'hold', quantity: 0, confidence: 0, reason: `Parse error: ${rawText}` };
+  }
+
+  // Enforce quantity caps server-side after Claude responds
+  const maxInvestment = effectiveCapital * 0.20;
+  const maxQuantity = lastPrice > 0 ? Math.floor(maxInvestment / lastPrice) : 0;
+
+  if (decision.action === 'buy' && decision.quantity > maxQuantity) {
+    decision.quantity = maxQuantity;
+  }
+  if (decision.action === 'sell' && decision.quantity > currentPosition) {
+    decision.quantity = currentPosition;
   }
 
   const marketData = { lastPrice, changePct, volume, indicators };

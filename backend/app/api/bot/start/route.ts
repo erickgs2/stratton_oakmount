@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
   const interval = setInterval(async () => {
     for (const symbol of symbols) {
       try {
-        await runAgentCycle(symbol, market);
+        await runAgentCycle(symbol, market, capitalLimit);
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
       }

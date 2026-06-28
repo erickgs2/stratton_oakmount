@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ibkrClient } from '@/lib/ibkr';
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as { market: 'MX' | 'USA' };
@@ -15,6 +16,8 @@ export async function POST(request: NextRequest) {
     clearInterval(global.botIntervals.get(intervalKey));
     global.botIntervals.delete(intervalKey);
   }
+
+  ibkrClient.stopKeepAlive();
 
   return NextResponse.json({ status: 'stopped', market });
 }
