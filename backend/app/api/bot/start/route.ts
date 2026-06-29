@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { runAgentCycle } from '@/lib/claude-agent';
 import { ibkrClient } from '@/lib/ibkr';
+import { writeBotLog } from '@/lib/bot-logger';
 
 // Module-level interval map — persists across requests in the same server process
 declare global {
@@ -20,6 +21,13 @@ export async function POST(request: NextRequest) {
     update: { symbols, capitalLimit, intervalMin, isActive: true },
   });
 
+  await writeBotLog({
+    level: 'info',
+    event: 'bot_started',
+    market,
+    message: `Bot started for ${market} — ${symbols.slice(0, 2).join(', ')}${symbols.length > 2 ? ` (+${symbols.length - 2} more)` : ''}`,
+  });
+
   ibkrClient.startKeepAlive();
 
   const intervalKey = `bot-${market}`;
@@ -33,6 +41,13 @@ export async function POST(request: NextRequest) {
         await runAgentCycle(symbol, market, capitalLimit);
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
+        await writeBotLog({
+          level: 'error',
+          event: 'cycle_error',
+          market,
+          symbol,
+          message: (err as Error).message,
+        });
       }
     }
   }, intervalMin * 60_000);

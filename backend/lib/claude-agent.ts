@@ -4,6 +4,7 @@ import { ibkrClient } from '@/lib/ibkr';
 import { calculateIndicators } from '@/lib/indicators';
 import { isMarketOpen } from '@/lib/market-hours';
 import { prisma } from '@/lib/prisma';
+import { writeBotLog } from '@/lib/bot-logger';
 
 export interface AgentCycleResult {
   action: 'buy' | 'sell' | 'hold';
@@ -181,6 +182,13 @@ export async function runAgentCycle(
         market,
       });
       executed = true;
+      await writeBotLog({
+        level: 'info',
+        event: 'order_placed',
+        market,
+        symbol,
+        message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
+      });
     }
   }
 
@@ -195,6 +203,15 @@ export async function runAgentCycle(
       response: JSON.parse(JSON.stringify(decision)),
       executed,
     },
+  });
+
+  await writeBotLog({
+    level: 'info',
+    event: 'cycle_complete',
+    market,
+    symbol,
+    message: `${symbol} → ${decision.action.toUpperCase()} x${decision.quantity} (confidence ${decision.confidence.toFixed(2)})`,
+    meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence },
   });
 
   if (executed) {
