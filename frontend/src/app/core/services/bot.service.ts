@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { BotConfig } from '../models/bot-config.model';
@@ -18,7 +19,7 @@ export interface BotStatusResponse {
 
 @Injectable({ providedIn: 'root' })
 export class BotService {
-  private readonly apiUrl = 'http://localhost:3000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

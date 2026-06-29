@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable, interval, switchMap, startWith } from 'rxjs';
 import { Portfolio } from '../models/portfolio.model';
 
 @Injectable({ providedIn: 'root' })
 export class PortfolioService {
-  private readonly apiUrl = 'http://localhost:3000/api';
+  private readonly apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
