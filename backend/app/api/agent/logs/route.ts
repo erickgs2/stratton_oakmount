@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { isBMVOpen, isNYSEOpen } from '@/lib/market-hours';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const market = searchParams.get('market') as 'MX' | 'USA' | null;
+  const limit = parseInt(searchParams.get('limit') ?? '50', 10);
 
-  const configs = await prisma.botConfig.findMany({
+  const logs = await prisma.agentLog.findMany({
     where: market ? { market } : {},
+    orderBy: { createdAt: 'desc' },
+    take: limit,
   });
 
-  return NextResponse.json({
-    configs,
-    markets: { MX: isBMVOpen(), USA: isNYSEOpen() },
-  });
+  return NextResponse.json({ logs });
 }
