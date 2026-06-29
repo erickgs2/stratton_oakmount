@@ -22,14 +22,18 @@ export async function GET(request: NextRequest) {
   const limitParam = parseInt(searchParams.get('limit') ?? '200', 10);
   const limit = Number.isNaN(limitParam) ? 200 : Math.min(Math.max(1, limitParam), 500);
 
-  const logs = await prisma.botLog.findMany({
-    where: {
-      ...(rawMarket ? { market: rawMarket } : {}),
-      ...(rawLevel ? { level: rawLevel } : {}),
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
-
-  return NextResponse.json({ logs });
+  try {
+    const logs = await prisma.botLog.findMany({
+      where: {
+        ...(rawMarket ? { market: rawMarket } : {}),
+        ...(rawLevel ? { level: rawLevel } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+    return NextResponse.json({ logs });
+  } catch (err) {
+    console.error('[bot/logs] DB error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }

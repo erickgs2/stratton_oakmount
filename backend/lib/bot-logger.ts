@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
-interface BotLogEntry {
+export interface BotLogEntry {
   level: 'info' | 'warn' | 'error';
   event: 'bot_started' | 'bot_stopped' | 'cycle_error' | 'cycle_complete' | 'order_placed';
   market?: string;
@@ -13,6 +13,6 @@ export async function writeBotLog(entry: BotLogEntry): Promise<void> {
   try {
     await prisma.botLog.create({ data: entry });
   } catch (err) {
-    console.error('[BotLogger] Failed to write log:', (err as Error).message);
+    console.error('[BotLogger] Failed to write log:', err instanceof Error ? err.message : String(err));
   }
 }
