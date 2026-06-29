@@ -12,6 +12,8 @@ import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotLogService } from '../core/services/bot-log.service';
 import { BotLog } from '../core/models/bot-log.model';
 
+const PAGE_SIZE = 50;
+
 @Component({
   selector: 'app-bot-logs-page',
   standalone: true,
@@ -23,8 +25,6 @@ import { BotLog } from '../core/models/bot-log.model';
   templateUrl: './bot-logs-page.component.html',
   styleUrls: ['./bot-logs-page.component.scss'],
 })
-const PAGE_SIZE = 50;
-
 export class BotLogsPageComponent implements OnInit, OnDestroy {
   allLogs: BotLog[] = [];
   filteredLogs: BotLog[] = [];
