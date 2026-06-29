@@ -12,13 +12,13 @@ declare global {
 global.botIntervals = global.botIntervals ?? new Map();
 
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { market: 'MX' | 'USA'; symbols: string[]; capitalLimit: number; intervalMin: number };
-  const { market, symbols, capitalLimit, intervalMin } = body;
+  const body = await request.json() as { market: 'MX' | 'USA'; symbols: string[]; capitalLimit: number; intervalMin: number; confidenceThreshold: number };
+  const { market, symbols, capitalLimit, intervalMin, confidenceThreshold } = body;
 
   const config = await prisma.botConfig.upsert({
     where: { market },
-    create: { market, symbols, capitalLimit, intervalMin, isActive: true },
-    update: { symbols, capitalLimit, intervalMin, isActive: true },
+    create: { market, symbols, capitalLimit, intervalMin, confidenceThreshold, isActive: true },
+    update: { symbols, capitalLimit, intervalMin, confidenceThreshold, isActive: true },
   });
 
   await writeBotLog({
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const interval = setInterval(async () => {
     for (const symbol of symbols) {
       try {
-        await runAgentCycle(symbol, market, capitalLimit);
+        await runAgentCycle(symbol, market, capitalLimit, confidenceThreshold);
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
         await writeBotLog({

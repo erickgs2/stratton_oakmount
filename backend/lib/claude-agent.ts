@@ -90,7 +90,8 @@ Respond with JSON only.`;
 export async function runAgentCycle(
   symbol: string,
   market: 'MX' | 'USA',
-  capitalLimit?: number
+  capitalLimit?: number,
+  confidenceThreshold = 0.60
 ): Promise<AgentCycleResult> {
   if (!isMarketOpen(market)) {
     return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
@@ -176,7 +177,7 @@ export async function runAgentCycle(
   // Log when a buy/sell is skipped due to confidence threshold
   if (
     (decision.action === 'buy' || decision.action === 'sell') &&
-    decision.confidence < 0.65 &&
+    decision.confidence < confidenceThreshold &&
     decision.quantity > 0
   ) {
     await writeBotLog({
@@ -184,15 +185,15 @@ export async function runAgentCycle(
       event: 'order_skipped',
       market,
       symbol,
-      message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} skipped — confidence ${decision.confidence.toFixed(2)} is below the 0.65 threshold`,
-      meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence },
+      message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} skipped — confidence ${decision.confidence.toFixed(2)} is below the ${confidenceThreshold.toFixed(2)} threshold`,
+      meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence, threshold: confidenceThreshold },
     });
   }
 
   // Execute trade if conditions are met
   if (
     (decision.action === 'buy' || decision.action === 'sell') &&
-    decision.confidence >= 0.65 &&
+    decision.confidence >= confidenceThreshold &&
     decision.quantity > 0
   ) {
     const exchange = market === 'MX' ? 'BMV' : 'SMART';
@@ -253,7 +254,7 @@ export async function runAgentCycle(
   let cycleNote = '';
   if (decision.action !== 'hold') {
     if (executed) cycleNote = ` — executed (order #${ibkrOrderId ?? ''})`;
-    else if (decision.confidence < 0.65) cycleNote = ` — skipped: confidence below 0.65 threshold`;
+    else if (decision.confidence < confidenceThreshold) cycleNote = ` — skipped: confidence ${decision.confidence.toFixed(2)} below ${confidenceThreshold.toFixed(2)} threshold`;
     else if (decision.quantity === 0) cycleNote = ` — skipped: quantity 0`;
   }
 

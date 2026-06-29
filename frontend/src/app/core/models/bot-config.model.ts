@@ -4,6 +4,7 @@ export interface BotConfig {
   symbols: string[];
   capitalLimit: number;
   intervalMin: number;
+  confidenceThreshold: number;
   isActive: boolean;
   updatedAt: string;
 }

@@ -24,6 +24,14 @@
         <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440">
       </mat-form-field>
 
+      <h3>Confidence Threshold</h3>
+      <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+      <mat-form-field appearance="outline">
+        <mat-label>Confidence Threshold</mat-label>
+        <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+        <mat-hint>Current: {{ mxConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.60–0.75</mat-hint>
+      </mat-form-field>
+
       <div class="toggle-row">
         <mat-slide-toggle [(ngModel)]="mxConfig.isActive" color="primary">
           {{ mxConfig.isActive ? 'Active' : 'Inactive' }}
@@ -61,6 +69,14 @@
       <mat-form-field appearance="outline">
         <mat-label>Interval (minutes)</mat-label>
         <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440">
+      </mat-form-field>
+
+      <h3>Confidence Threshold</h3>
+      <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+      <mat-form-field appearance="outline">
+        <mat-label>Confidence Threshold</mat-label>
+        <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+        <mat-hint>Current: {{ usaConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.60–0.75</mat-hint>
       </mat-form-field>
 
       <div class="toggle-row">

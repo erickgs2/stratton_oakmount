@@ -106,6 +106,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           symbols: config.symbols,
           capitalLimit: config.capitalLimit,
           intervalMin: config.intervalMin,
+          confidenceThreshold: config.confidenceThreshold ?? 0.60,
         }).subscribe(() => this.loadBotStatus())
       );
     } else {

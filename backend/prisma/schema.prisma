@@ -20,13 +20,14 @@ model Trade {
 }
 
 model BotConfig {
-  id           String   @id @default(cuid())
-  market       String   @unique // "MX" | "USA"
-  symbols      String[]
-  capitalLimit Float
-  intervalMin  Int
-  isActive     Boolean  @default(false)
-  updatedAt    DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  market              String   @unique // "MX" | "USA"
+  symbols             String[]
+  capitalLimit        Float
+  intervalMin         Int
+  confidenceThreshold Float    @default(0.60)
+  isActive            Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
 }
 
 model AgentLog {
