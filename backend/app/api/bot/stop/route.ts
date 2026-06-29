@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
+import { resetDailyContext } from '@/lib/trading-context';
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as { market: 'MX' | 'USA' };
@@ -20,6 +21,7 @@ export async function POST(request: NextRequest) {
   }
 
   ibkrClient.stopKeepAlive();
+  await resetDailyContext();
 
   await writeBotLog({
     level: 'info',

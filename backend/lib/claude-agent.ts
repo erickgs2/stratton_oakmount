@@ -5,6 +5,7 @@ import { calculateIndicators } from '@/lib/indicators';
 import { isMarketOpen } from '@/lib/market-hours';
 import { prisma } from '@/lib/prisma';
 import { writeBotLog } from '@/lib/bot-logger';
+import { buildContextSection, recordTrade } from '@/lib/trading-context';
 
 export interface AgentCycleResult {
   action: 'buy' | 'sell' | 'hold';
@@ -45,7 +46,8 @@ function buildUserPrompt(
   volume: number,
   indicators: ReturnType<typeof calculateIndicators>,
   currentPosition: number,
-  availableFunds: number
+  availableFunds: number,
+  tradingContext: string
 ): string {
   const maxInvestment = availableFunds * 0.20;
   const maxQuantity = Math.floor(maxInvestment / lastPrice);
@@ -72,11 +74,15 @@ PORTFOLIO:
 - Max allowed investment (20% rule): ${maxInvestment.toFixed(2)} ${currency}
 - Max quantity you can buy: ${maxQuantity} shares
 
+TRADING CONTEXT:
+${tradingContext}
+
 RULES:
 - Never invest more than 20% of available funds in one symbol
 - Set confidence = 0 if market conditions are unclear
 - quantity must be 0 for "hold" action
 - If selling, quantity must not exceed current position (${currentPosition})
+- Use trading context to avoid duplicate trades and make better decisions
 
 Respond with JSON only.`;
 }
@@ -124,6 +130,8 @@ export async function runAgentCycle(
     ? Math.min(availableFunds, capitalLimit)
     : availableFunds;
 
+  const tradingContext = await buildContextSection(positions);
+
   // Call Claude
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
@@ -134,7 +142,7 @@ export async function runAgentCycle(
         role: 'user',
         content: buildUserPrompt(
           symbol, market, lastPrice, changePct, volume,
-          indicators, currentPosition, effectiveCapital
+          indicators, currentPosition, effectiveCapital, tradingContext
         ),
       },
     ],
@@ -188,6 +196,13 @@ export async function runAgentCycle(
         market,
       });
       executed = true;
+      await recordTrade({
+        symbol,
+        action: decision.action === 'buy' ? 'BUY' : 'SELL',
+        quantity: decision.quantity,
+        price: lastPrice,
+        orderId: ibkrOrderId,
+      });
       await writeBotLog({
         level: 'info',
         event: 'order_placed',

@@ -68,3 +68,14 @@ table { width: 100%; }
   background-color: rgba(255, 255, 255, 0.05) !important;
   color: #888 !important;
 }
+
+.charts-section {
+  margin-top: 32px;
+}
+
+.charts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+}
