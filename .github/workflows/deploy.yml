@@ -44,8 +44,8 @@ jobs:
               exit 1
             }
 
-            echo "── Build images (backend first so migrate reuses cache) ──"
-            docker compose build backend web
+            echo "── Build images ─────────────────────────────────────"
+            docker compose build backend web migrate
 
             echo "── Run database migrations ──────────────────────────"
             docker compose --profile migrate run --rm migrate
