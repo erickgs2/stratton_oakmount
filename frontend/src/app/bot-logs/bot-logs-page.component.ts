@@ -7,8 +7,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subscription, interval } from 'rxjs';
-import { startWith, switchMap } from 'rxjs/operators';
+import { Subscription, interval, of } from 'rxjs';
+import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotLogService } from '../core/services/bot-log.service';
 import { BotLog } from '../core/models/bot-log.model';
 
@@ -40,7 +40,11 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
     this.sub.add(
       interval(10_000).pipe(
         startWith(0),
-        switchMap(() => this.botLogService.getLogs({ limit: 200 })),
+        switchMap(() =>
+          this.botLogService.getLogs({ limit: 200 }).pipe(
+            catchError(() => of({ logs: this.allLogs }))
+          )
+        ),
       ).subscribe({
         next: ({ logs }) => {
           this.allLogs = logs;
