@@ -45,17 +45,18 @@ export async function getMXMarketData(symbol: string): Promise<MXMarketData> {
   const token = getToken();
   const today = new Date().toISOString().split('T')[0];
   const sixtyDaysAgo = daysAgo(60);
+  const bolsa = encodeURIComponent('BMV,BIVA');
 
   const [intraday, historical] = await Promise.all([
     apiFetch<{ Serie: IntradayRecord[] }>(
-      `${BASE_URL}/intradia?token=${token}&emisora_serie=${symbol}&bolsa=BMV,BIVA`
+      `${BASE_URL}/intradia?token=${token}&emisora_serie=${symbol}&bolsa=${bolsa}&intervalo=1h&inicio=${today}&final=${today}`
     ),
     apiFetch<{ Serie: HistoricalRecord[] }>(
       `${BASE_URL}/historico?token=${token}&emisora_serie=${symbol}&periodo=diaria&desde=${sixtyDaysAgo}&hasta=${today}`
     ),
   ]);
 
-  const latest = intraday.Serie[0];
+  const latest = intraday.Serie[intraday.Serie.length - 1];
   if (!latest) throw new Error(`No intraday data returned for symbol ${symbol}`);
 
   return {
