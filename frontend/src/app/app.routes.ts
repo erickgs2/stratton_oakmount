@@ -22,4 +22,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./bot-logs/bot-logs-page.component').then(m => m.BotLogsPageComponent),
   },
+  {
+    path: 'agent-logs',
+    loadComponent: () =>
+      import('./agent-logs/agent-logs-page.component').then(m => m.AgentLogsPageComponent),
+  },
 ];

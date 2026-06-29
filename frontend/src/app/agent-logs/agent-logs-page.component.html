@@ -1,0 +1,10 @@
+<div class="agent-logs-page">
+  <div class="page-header">
+    <h1>Agent Logs</h1>
+    <mat-chip-set>
+      <mat-chip [class.active]="activeMarket === 'MX'" (click)="setMarket('MX')">MX — BMV</mat-chip>
+      <mat-chip [class.active]="activeMarket === 'USA'" (click)="setMarket('USA')">USA — NYSE/Nasdaq</mat-chip>
+    </mat-chip-set>
+  </div>
+  <app-agent-log [market]="activeMarket" [isRunning]="isRunning"></app-agent-log>
+</div>

@@ -15,8 +15,6 @@ import { PortfolioService } from '../core/services/portfolio.service';
 import { BotService } from '../core/services/bot.service';
 import { Portfolio } from '../core/models/portfolio.model';
 import { BotConfig } from '../core/models/bot-config.model';
-import { AgentLogComponent } from '../agent-log/agent-log.component';
-
 type Market = 'MX' | 'USA';
 
 @Component({
@@ -27,7 +25,6 @@ type Market = 'MX' | 'USA';
     MatTabsModule, MatCardModule, MatTableModule,
     MatSlideToggleModule, MatBadgeModule, MatIconModule,
     MatProgressSpinnerModule, MatChipsModule,
-    AgentLogComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
@@ -84,7 +81,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onTabChange(index: number): void {
     if (index === 0) this.activeMarket = 'MX';
     else if (index === 1) this.activeMarket = 'USA';
-    // index 2 = Agent Logs — market stays as-is
   }
 
   get activeBotConfig(): BotConfig | undefined {
