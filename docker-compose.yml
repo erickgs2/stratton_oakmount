@@ -23,7 +23,9 @@ services:
 
   # Run with: docker compose --profile migrate run --rm migrate
   migrate:
-    build: ./backend
+    build:
+      context: ./backend
+      target: builder
     profiles: [migrate]
     extra_hosts:
       - "host.docker.internal:host-gateway"
