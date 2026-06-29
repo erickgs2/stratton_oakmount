@@ -31,10 +31,10 @@ export class IBKRClient {
   private keepAliveInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.baseUrl = process.env.IBKR_GATEWAY_URL ?? 'https://localhost:5000/v1/api';
+    this.baseUrl = process.env.IBKR_GATEWAY_URL ?? 'https://127.0.0.1:5001/v1/api';
     this.accountId = process.env.IBKR_ACCOUNT_ID ?? '';
-    // IBKR Client Portal uses a self-signed certificate on localhost
     this.agent = new https.Agent({ rejectUnauthorized: false });
+    console.log('[IBKR] init — baseUrl:', this.baseUrl, '| accountId:', this.accountId);
   }
 
   private request<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
@@ -50,6 +50,8 @@ export class IBKRClient {
           method: options.method ?? 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'User-Agent': 'stratton-oakmont/1.0',
+            'Accept': '*/*',
             ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {}),
           },
           agent: this.agent,
@@ -104,6 +106,27 @@ export class IBKRClient {
       totalCashValue: raw['totalcashvalue']?.amount ?? 0,
       netLiquidation: raw['netliquidation']?.amount ?? 0,
     };
+  }
+
+  async searchConid(symbol: string, exchange: string): Promise<number | null> {
+    try {
+      const results = await this.request<Array<{
+        conid: number | string;
+        sections?: Array<{ secType: string; exchange?: string }>;
+      }>>(`/iserver/secdef/search?symbol=${encodeURIComponent(symbol)}&name=false&secType=STK`);
+
+      if (!results?.length) return null;
+
+      // Prefer the contract listed on the target exchange; fall back to first result
+      const match =
+        results.find(r => r.sections?.some(s => s.exchange === exchange)) ??
+        results[0];
+
+      const id = typeof match.conid === 'string' ? parseInt(match.conid, 10) : match.conid;
+      return isNaN(id) ? null : id;
+    } catch {
+      return null;
+    }
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<string> {

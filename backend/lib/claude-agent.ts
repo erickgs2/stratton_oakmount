@@ -171,10 +171,14 @@ export async function runAgentCycle(
     decision.confidence >= 0.65 &&
     decision.quantity > 0
   ) {
-    // Find conid — for BMV symbols we need the contract ID
-    // In production this should be resolved via IBKR contract search
-    const position = positions.find(p => p.ticker === symbol);
-    const conid = position?.conid;
+    const exchange = market === 'MX' ? 'BMV' : 'SMART';
+
+    // Try existing positions first; fall back to contract search for new buys
+    let conid: number | undefined = positions.find(p => p.ticker === symbol)?.conid;
+    if (!conid && decision.action === 'buy') {
+      const found = await ibkrClient.searchConid(symbol, exchange);
+      conid = found ?? undefined;
+    }
 
     if (conid) {
       ibkrOrderId = await ibkrClient.placeOrder({
@@ -190,6 +194,14 @@ export async function runAgentCycle(
         market,
         symbol,
         message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
+      });
+    } else {
+      await writeBotLog({
+        level: 'warn',
+        event: 'cycle_complete',
+        market,
+        symbol,
+        message: `${symbol} ${decision.action.toUpperCase()} signal skipped — contract not found on IBKR (conid lookup failed)`,
       });
     }
   }
