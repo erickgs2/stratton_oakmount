@@ -130,7 +130,14 @@ export class IBKRClient {
   }
 
   async placeOrder(params: PlaceOrderParams): Promise<string> {
-    const result = await this.request<{ order_id: number }[]>(
+    type OrderResponse = Array<{
+      order_id?: number;
+      id?: string;
+      message?: string[];
+      isSuppressed?: boolean;
+    }>;
+
+    let result = await this.request<OrderResponse>(
       `/iserver/account/${this.accountId}/orders`,
       {
         method: 'POST',
@@ -150,6 +157,19 @@ export class IBKRClient {
         },
       }
     );
+
+    // IBKR may return a confirmation request instead of an order_id.
+    // Auto-confirm up to 3 rounds to handle chained warning prompts.
+    for (let i = 0; i < 3; i++) {
+      const first = result[0];
+      if (!first || first.order_id != null) break;
+      if (!first.id) break;
+      result = await this.request<OrderResponse>(
+        `/iserver/reply/${first.id}`,
+        { method: 'POST', body: { confirmed: true } }
+      );
+    }
+
     return result[0]?.order_id?.toString() ?? '';
   }
 }

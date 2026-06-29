@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 
 export interface BotLogEntry {
   level: 'info' | 'warn' | 'error';
-  event: 'bot_started' | 'bot_stopped' | 'cycle_error' | 'cycle_complete' | 'order_placed';
+  event: 'bot_started' | 'bot_stopped' | 'cycle_error' | 'cycle_complete' | 'order_placed' | 'order_skipped';
   market?: string;
   symbol?: string;
   message: string;
