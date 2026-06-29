@@ -38,3 +38,14 @@ model AgentLog {
   executed   Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
+
+model BotLog {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  level     String
+  event     String
+  market    String?
+  symbol    String?
+  message   String
+  meta      Json?
+}
