@@ -17,4 +17,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./bot-config/bot-config.component').then(m => m.BotConfigComponent),
   },
+  {
+    path: 'bot-logs',
+    loadComponent: () =>
+      import('./bot-logs/bot-logs-page.component').then(m => m.BotLogsPageComponent),
+  },
 ];

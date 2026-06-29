@@ -1,0 +1,50 @@
+<div class="bot-logs-container">
+  <h1>Bot Logs</h1>
+
+  <div class="controls">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Search</mat-label>
+      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="symbol or message">
+      <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="searchTerm = ''; applyFilters()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-icon matSuffix *ngIf="!searchTerm">search</mat-icon>
+    </mat-form-field>
+
+    <div class="filter-group">
+      <span class="filter-label">Level:</span>
+      <mat-chip-set>
+        <mat-chip [class.active]="activeLevel === 'all'" (click)="setLevel('all')">All</mat-chip>
+        <mat-chip [class.active]="activeLevel === 'info'" (click)="setLevel('info')">Info</mat-chip>
+        <mat-chip [class.active]="activeLevel === 'warn'" (click)="setLevel('warn')">Warn</mat-chip>
+        <mat-chip [class.active]="activeLevel === 'error'" (click)="setLevel('error')">Error</mat-chip>
+      </mat-chip-set>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Market:</span>
+      <mat-chip-set>
+        <mat-chip [class.active]="activeMarket === 'all'" (click)="setMarket('all')">All</mat-chip>
+        <mat-chip [class.active]="activeMarket === 'MX'" (click)="setMarket('MX')">MX</mat-chip>
+        <mat-chip [class.active]="activeMarket === 'USA'" (click)="setMarket('USA')">USA</mat-chip>
+      </mat-chip-set>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="!loading && filteredLogs.length === 0" class="empty-state">
+    <mat-icon>terminal</mat-icon>
+    <p>No bot activity yet — start the bot to see logs here.</p>
+  </div>
+
+  <div *ngFor="let log of filteredLogs" class="log-row">
+    <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
+    <span [class]="getLevelClass(log.level)" class="level-badge">{{ log.level }}</span>
+    <span class="event-chip">{{ log.event }}</span>
+    <span *ngIf="log.symbol" class="symbol">{{ log.symbol }}</span>
+    <span class="message">{{ log.message }}</span>
+  </div>
+</div>
