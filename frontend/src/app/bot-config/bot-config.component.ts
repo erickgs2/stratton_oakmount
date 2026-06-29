@@ -39,9 +39,9 @@ export class BotConfigComponent implements OnInit {
   constructor(private botService: BotService, private snackBar: MatSnackBar) {}
 
   ngOnInit(): void {
-    this.botService.getStatus().subscribe(configs => {
-      const mx = configs.find(c => c.market === 'MX');
-      const usa = configs.find(c => c.market === 'USA');
+    this.botService.getStatus().subscribe(response => {
+      const mx = response.configs.find(c => c.market === 'MX');
+      const usa = response.configs.find(c => c.market === 'USA');
       if (mx) this.mxConfig = { ...mx };
       if (usa) this.usaConfig = { ...usa };
     });

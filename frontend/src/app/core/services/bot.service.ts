@@ -10,17 +10,22 @@ export interface StartBotPayload {
   intervalMin: number;
 }
 
+export interface BotStatusResponse {
+  configs: BotConfig[];
+  markets: { MX: boolean; USA: boolean };
+}
+
 @Injectable({ providedIn: 'root' })
 export class BotService {
   private readonly apiUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient) {}
 
-  getStatus(market?: 'MX' | 'USA'): Observable<BotConfig[]> {
+  getStatus(market?: 'MX' | 'USA'): Observable<BotStatusResponse> {
     const url = market
       ? `${this.apiUrl}/bot/status?market=${market}`
       : `${this.apiUrl}/bot/status`;
-    return this.http.get<BotConfig[]>(url);
+    return this.http.get<BotStatusResponse>(url);
   }
 
   startBot(payload: StartBotPayload): Observable<{ status: string; config: BotConfig }> {

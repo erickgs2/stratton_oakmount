@@ -66,7 +66,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   loadBotStatus(): void {
     this.botService.getStatus().subscribe({
-      next: configs => { this.botConfigs = configs; },
+      next: response => { this.botConfigs = response.configs; },
     });
   }
 
