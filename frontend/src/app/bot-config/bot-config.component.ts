@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs';
+import { Observable, switchMap, of } from 'rxjs';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatChipsModule, MatChipListboxChange } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -65,11 +65,13 @@ export class BotConfigComponent implements OnInit {
       confidenceThreshold: config.confidenceThreshold ?? 0.65,
     };
 
-    const action$: Observable<unknown> = config.isActive
-      ? this.botService.startBot(payload)
-      : this.botService.stopBot(market);
-
-    action$.subscribe({
+    // Always persist the config first, then start/stop the bot if needed
+    this.botService.saveConfig(payload).pipe(
+      switchMap(() => config.isActive
+        ? this.botService.startBot(payload)
+        : this.botService.stopBot(market)
+      ),
+    ).subscribe({
       next: () => {
         this.snackBar.open('Configuration saved', 'OK', { duration: 3000 });
         this.saving = false;

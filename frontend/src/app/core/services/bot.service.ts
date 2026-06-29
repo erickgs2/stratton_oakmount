@@ -29,6 +29,13 @@ export class BotService {
     return this.http.get<BotStatusResponse>(url);
   }
 
+  saveConfig(payload: StartBotPayload): Observable<{ status: string; config: BotConfig }> {
+    return this.http.post<{ status: string; config: BotConfig }>(
+      `${this.apiUrl}/bot/config`,
+      payload
+    );
+  }
+
   startBot(payload: StartBotPayload): Observable<{ status: string; config: BotConfig }> {
     return this.http.post<{ status: string; config: BotConfig }>(
       `${this.apiUrl}/bot/start`,
