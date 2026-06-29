@@ -74,6 +74,17 @@
     </mat-card>
   </div>
 
+  <div *ngIf="activeSymbols.length > 0" class="charts-section">
+    <h2>Market Charts — Last 60 Days</h2>
+    <div class="charts-row">
+      <app-symbol-chart
+        *ngFor="let sym of activeSymbols"
+        [symbol]="sym"
+        [market]="activeMarket">
+      </app-symbol-chart>
+    </div>
+  </div>
+
   <h2 *ngIf="portfolio">Open Positions</h2>
   <table mat-table [dataSource]="portfolio.positions" *ngIf="portfolio">
     <ng-container matColumnDef="ticker">
@@ -103,15 +114,4 @@
     <tr mat-header-row *matHeaderRowDef="positionColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: positionColumns;"></tr>
   </table>
-
-  <div *ngIf="activeSymbols.length > 0" class="charts-section">
-    <h2>Market Charts — Last 60 Days</h2>
-    <div class="charts-row">
-      <app-symbol-chart
-        *ngFor="let sym of activeSymbols"
-        [symbol]="sym"
-        [market]="activeMarket">
-      </app-symbol-chart>
-    </div>
-  </div>
 </ng-template>
