@@ -71,25 +71,77 @@ sudo -u postgres psql -c "CREATE DATABASE stratton_oakmont OWNER master;"
 
 ### 1.6 Install and Start IBKR Client Portal Gateway
 
-The gateway is a Java process that must be running before the bot can place orders. It runs on the Pi host at port 5001.
+The gateway is a Java process that must be running before the bot can place orders. It runs on the Pi host at port 5000.
 
 ```bash
 # Copy the gateway zip to the Pi and extract it
-scp clientportal.gw.zip gsfawkes@192.168.1.179:~/
-ssh pi@raspberrypi.local "unzip clientportal.gw.zip -d ~/ibkr-gateway"
+scp -i ~/.ssh/stratton_deploy clientportal.gw.zip gsfawkes@192.168.1.179:~/
+ssh gsfawkes@192.168.1.179 "unzip clientportal.gw.zip -d ~/ibkr-gateway"
 
-# Start the gateway (requires Java 11+)
+# Install Java (required)
 sudo apt-get install -y default-jre
-cd ~/ibkr-gateway
-./bin/run.sh root/conf.yaml
+java -version   # should print openjdk 11+
+```
 
-``` 
-#### SSH tunnel
-'''bash
-ssh -i /Users/egarsev/Desktop/Stuff/servers/intech/intech_dev_deploy -N -L 5002:localhost:5000 gsfawkes@192.168.1.179
-'''
+#### Run as a background systemd service (survives reboots)
 
-Log in at `https://localhost:5001` from the Pi's browser (or via SSH tunnel) and authenticate with your IBKR credentials before starting the bot.
+```bash
+sudo nano /etc/systemd/system/ibkr-gateway.service
+```
+
+Paste:
+
+```ini
+[Unit]
+Description=IBKR Client Portal Gateway
+After=network.target
+
+[Service]
+Type=simple
+User=gsfawkes
+WorkingDirectory=/home/gsfawkes/ibkr-gateway
+ExecStart=/bin/bash bin/run.sh root/conf.yaml
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/home/gsfawkes/ibkr-gateway/gateway.log
+StandardError=append:/home/gsfawkes/ibkr-gateway/gateway.log
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable ibkr-gateway
+sudo systemctl start ibkr-gateway
+
+# Verify it started
+sudo systemctl status ibkr-gateway
+tail -f ~/ibkr-gateway/gateway.log
+```
+
+#### Authenticate via SSH tunnel (required after every ~24 h session expiry)
+
+Open a tunnel from your local machine to the gateway's web UI:
+
+```bash
+ssh -i ~/.ssh/stratton_deploy -N -L 5002:localhost:5000 gsfawkes@192.168.1.179
+```
+
+Then open `https://localhost:5002` in your browser, accept the self-signed certificate warning, and log in with your IBKR credentials. The session stays alive until IBKR expires it (~24 hours); re-authenticate when the bot starts returning auth errors.
+
+#### Useful gateway commands
+
+```bash
+# Check service status
+sudo systemctl status ibkr-gateway
+
+# Restart after a reboot or session expiry
+sudo systemctl restart ibkr-gateway
+
+# View live logs
+tail -f ~/ibkr-gateway/gateway.log
+```
 
 ---
 
