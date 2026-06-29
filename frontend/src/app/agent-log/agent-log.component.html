@@ -1,0 +1,79 @@
+<div class="agent-log-container">
+
+  <div class="toggle-panel">
+    <div class="toggle-row">
+      <span class="toggle-label">Input fields:</span>
+      <mat-chip-set>
+        <mat-chip
+          *ngFor="let key of inputKeys()"
+          [class.active]="inputToggles[key]"
+          (click)="toggleInput(key)">
+          {{ inputFieldLabels[key] }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-label">Claude fields:</span>
+      <mat-chip-set>
+        <mat-chip
+          *ngFor="let key of claudeKeys()"
+          [class.active]="claudeToggles[key]"
+          (click)="toggleClaude(key)">
+          {{ claudeFieldLabels[key] }}
+        </mat-chip>
+      </mat-chip-set>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="!loading && logs.length === 0" class="empty-state">
+    <mat-icon>smart_toy</mat-icon>
+    <p>No agent cycles recorded yet. Start the bot to see Claude's decisions here.</p>
+  </div>
+
+  <div *ngFor="let log of logs" class="log-entry">
+    <div class="log-header">
+      <span class="symbol-chip">{{ log.symbol }}</span>
+      <span class="market-badge">{{ log.market }}</span>
+      <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
+      <span *ngIf="log.executed" class="executed-badge">EXECUTED</span>
+    </div>
+
+    <div class="log-body">
+      <div class="input-bubble">
+        <div class="bubble-header">Input</div>
+        <div *ngFor="let key of inputKeys()">
+          <div *ngIf="inputToggles[key]" class="field-row">
+            <span class="field-label">{{ inputFieldLabels[key] }}</span>
+            <span class="field-value">{{ getFieldValue(log, key) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="claude-bubble">
+        <div class="bubble-header">
+          Claude
+          <span [class]="getActionClass(log.response.action)" class="action-badge">
+            {{ log.response.action | uppercase }}
+          </span>
+        </div>
+        <div *ngIf="claudeToggles['quantity']" class="field-row">
+          <span class="field-label">Quantity</span>
+          <span class="field-value">{{ log.response.quantity }}</span>
+        </div>
+        <div *ngIf="claudeToggles['confidence']" class="field-row">
+          <span class="field-label">Confidence</span>
+          <span class="field-value">{{ log.response.confidence | number:'1.2-2' }}</span>
+        </div>
+        <div *ngIf="claudeToggles['reason']" class="field-row reason-row">
+          <span class="field-label">Reason</span>
+          <span class="field-value reason-text">{{ log.response.reason }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
