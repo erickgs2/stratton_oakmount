@@ -65,6 +65,7 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['market']?.firstChange || changes['isRunning']?.firstChange) return;
     if (changes['market'] || changes['isRunning']) {
       this.startPolling();
     }
@@ -87,7 +88,7 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
         error: () => { this.loading = false; },
       });
     } else {
-      this.agentLogService.getLogs(this.market).subscribe({
+      this.pollSub = this.agentLogService.getLogs(this.market).subscribe({
         next: ({ logs }) => { this.logs = logs; this.loading = false; },
         error: () => { this.loading = false; },
       });
