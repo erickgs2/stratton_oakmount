@@ -75,14 +75,19 @@ The gateway is a Java process that must be running before the bot can place orde
 
 ```bash
 # Copy the gateway zip to the Pi and extract it
-scp clientportal.gw.zip pi@raspberrypi.local:~/
+scp clientportal.gw.zip gsfawkes@192.168.1.179:~/
 ssh pi@raspberrypi.local "unzip clientportal.gw.zip -d ~/ibkr-gateway"
 
 # Start the gateway (requires Java 11+)
 sudo apt-get install -y default-jre
 cd ~/ibkr-gateway
 ./bin/run.sh root/conf.yaml
-```
+
+``` 
+#### SSH tunnel
+'''bash
+ssh -i /Users/egarsev/Desktop/Stuff/servers/intech/intech_dev_deploy -N -L 5002:localhost:5000 gsfawkes@192.168.1.179
+'''
 
 Log in at `https://localhost:5001` from the Pi's browser (or via SSH tunnel) and authenticate with your IBKR credentials before starting the bot.
 
@@ -109,7 +114,7 @@ crontab -e
 # Add: */5 * * * * ~/duckdns/duck.sh >/dev/null 2>&1
 ```
 
-**Router setup:** Forward **external port 80** → Pi local IP port 80 (for the web app) and **external port 22** → Pi local IP port 22 (for GitHub Actions SSH). Give the Pi a static DHCP lease.
+**Router setup:** Forward **external port 5001** → Pi local IP port 5001 (for the web app) and **external port 22** → Pi local IP port 22 (for GitHub Actions SSH). Give the Pi a static DHCP lease.
 
 ---
 
@@ -211,7 +216,7 @@ docker compose up -d --remove-orphans
 docker compose ps
 ```
 
-Open `http://your-subdomain.duckdns.org` — you should see the dashboard.
+Open `http://your-subdomain.duckdns.org:5001` — you should see the dashboard.
 
 ---
 

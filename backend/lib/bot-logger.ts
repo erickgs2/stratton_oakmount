@@ -11,7 +11,12 @@ export interface BotLogEntry {
 
 export async function writeBotLog(entry: BotLogEntry): Promise<void> {
   try {
-    await prisma.botLog.create({ data: entry });
+    await prisma.botLog.create({
+      data: {
+        ...entry,
+        meta: entry.meta !== undefined ? JSON.parse(JSON.stringify(entry.meta)) : undefined,
+      },
+    });
   } catch (err) {
     console.error('[BotLogger] Failed to write log:', err instanceof Error ? err.message : String(err));
   }
