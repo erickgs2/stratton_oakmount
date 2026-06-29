@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { runAgentCycle } from '@/lib/claude-agent';
 import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
+import { isMarketOpen } from '@/lib/market-hours';
 
 // Module-level interval map — persists across requests in the same server process
 declare global {
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   const interval = setInterval(async () => {
+    if (!isMarketOpen(market)) return; // no API calls while market is closed
     for (const symbol of symbols) {
       try {
         await runAgentCycle(symbol, market, capitalLimit, confidenceThreshold);

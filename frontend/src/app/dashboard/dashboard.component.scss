@@ -49,6 +49,23 @@ mat-card {
 .positive { color: #4caf50; }
 .negative { color: #f44336; }
 
+.portfolio-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #757575;
+  margin-bottom: 8px;
+}
+
+.status-icon {
+  font-size: 14px;
+  width: 14px;
+  height: 14px;
+  &.open   { color: #4caf50; }
+  &.closed { color: #757575; }
+}
+
 .phase2-notice {
   display: flex;
   align-items: center;

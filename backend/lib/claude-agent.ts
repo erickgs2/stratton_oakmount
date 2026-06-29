@@ -91,7 +91,7 @@ export async function runAgentCycle(
   symbol: string,
   market: 'MX' | 'USA',
   capitalLimit?: number,
-  confidenceThreshold = 0.60
+  confidenceThreshold = 0.65
 ): Promise<AgentCycleResult> {
   if (!isMarketOpen(market)) {
     return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };

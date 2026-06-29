@@ -31,8 +31,8 @@ export class BotConfigComponent implements OnInit {
   mxSymbols = MX_SYMBOLS;
   usaSymbols = USA_SYMBOLS;
 
-  mxConfig: Partial<BotConfig> = { market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15, confidenceThreshold: 0.60 };
-  usaConfig: Partial<BotConfig> = { market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15, confidenceThreshold: 0.60 };
+  mxConfig: Partial<BotConfig> = { market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15, confidenceThreshold: 0.65 };
+  usaConfig: Partial<BotConfig> = { market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15, confidenceThreshold: 0.65 };
 
   saving = false;
 
@@ -62,7 +62,7 @@ export class BotConfigComponent implements OnInit {
       symbols: config.symbols ?? [],
       capitalLimit: config.capitalLimit ?? 10000,
       intervalMin: config.intervalMin ?? 15,
-      confidenceThreshold: config.confidenceThreshold ?? 0.60,
+      confidenceThreshold: config.confidenceThreshold ?? 0.65,
     };
 
     const action$: Observable<unknown> = config.isActive

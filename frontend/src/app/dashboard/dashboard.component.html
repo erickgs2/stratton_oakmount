@@ -42,6 +42,21 @@
     {{ error }} — Is the IBKR Gateway running at localhost:5001?
   </div>
 
+  <div *ngIf="!loading && !error && portfolio" class="portfolio-status">
+    <ng-container *ngIf="isActiveMarketOpen; else marketClosed">
+      <mat-icon class="status-icon open">wifi</mat-icon>
+      <span>Live · updating every 30s
+        <ng-container *ngIf="portfolioUpdatedAt"> · last updated {{ portfolioUpdatedAt | date:'HH:mm:ss' }}</ng-container>
+      </span>
+    </ng-container>
+    <ng-template #marketClosed>
+      <mat-icon class="status-icon closed">wifi_off</mat-icon>
+      <span>Market closed · portfolio updates paused
+        <ng-container *ngIf="portfolioUpdatedAt"> · snapshot at {{ portfolioUpdatedAt | date:'HH:mm' }}</ng-container>
+      </span>
+    </ng-template>
+  </div>
+
   <div *ngIf="!loading && !error && portfolio" class="cards-row">
     <mat-card>
       <mat-card-header>

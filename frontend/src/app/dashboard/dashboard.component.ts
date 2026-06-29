@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription, interval } from 'rxjs';
-import { startWith } from 'rxjs/operators';
+import { Subscription, interval, EMPTY } from 'rxjs';
+import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -34,6 +34,7 @@ type Market = 'MX' | 'USA';
 export class DashboardComponent implements OnInit, OnDestroy {
   activeMarket: Market = 'MX';
   portfolio: Portfolio | null = null;
+  portfolioUpdatedAt: Date | null = null;
   botConfigs: BotConfig[] = [];
   marketOpen: { MX: boolean; USA: boolean } = { MX: false, USA: false };
   loading = true;
@@ -48,20 +49,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.subs.add(
-      this.portfolioService.pollPortfolio(30_000).subscribe({
-        next: portfolio => {
-          this.portfolio = portfolio;
-          this.loading = false;
-        },
-        error: err => {
-          this.error = err.message;
-          this.loading = false;
-        },
-      })
-    );
+    // Poll bot status every 60s — drives market-open state
     this.subs.add(
       interval(60_000).pipe(startWith(0)).subscribe(() => this.loadBotStatus())
+    );
+
+    // Poll portfolio every 30s ONLY when market is open.
+    // When market is closed, skip after the first successful fetch so we
+    // don't hammer IBKR for data that won't change until the next session.
+    this.subs.add(
+      interval(30_000).pipe(
+        startWith(0),
+        switchMap(() => {
+          if (!this.isActiveMarketOpen && this.portfolio !== null) {
+            return EMPTY; // market closed and we already have data — skip
+          }
+          return this.portfolioService.getPortfolio().pipe(
+            catchError(err => {
+              this.error = err.message;
+              this.loading = false;
+              return EMPTY;
+            })
+          );
+        }),
+      ).subscribe(portfolio => {
+        this.portfolio = portfolio;
+        this.portfolioUpdatedAt = new Date();
+        this.loading = false;
+        this.error = null;
+      })
     );
   }
 
@@ -106,7 +122,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           symbols: config.symbols,
           capitalLimit: config.capitalLimit,
           intervalMin: config.intervalMin,
-          confidenceThreshold: config.confidenceThreshold ?? 0.60,
+          confidenceThreshold: config.confidenceThreshold ?? 0.65,
         }).subscribe(() => this.loadBotStatus())
       );
     } else {

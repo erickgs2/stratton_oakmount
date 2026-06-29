@@ -25,7 +25,7 @@ model BotConfig {
   symbols             String[]
   capitalLimit        Float
   intervalMin         Int
-  confidenceThreshold Float    @default(0.60)
+  confidenceThreshold Float    @default(0.65)
   isActive            Boolean  @default(false)
   updatedAt           DateTime @updatedAt
 }
