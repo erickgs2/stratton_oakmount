@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, interval } from 'rxjs';
+import { startWith } from 'rxjs/operators';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -60,7 +61,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         },
       })
     );
-    this.loadBotStatus();
+    this.subs.add(
+      interval(60_000).pipe(startWith(0)).subscribe(() => this.loadBotStatus())
+    );
   }
 
   ngOnDestroy(): void {
@@ -68,12 +71,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadBotStatus(): void {
-    this.botService.getStatus().subscribe({
-      next: ({ configs, markets }) => {
-        this.botConfigs = configs;
-        this.marketOpen = markets;
-      },
-    });
+    this.subs.add(
+      this.botService.getStatus().subscribe({
+        next: ({ configs, markets }) => {
+          this.botConfigs = configs;
+          this.marketOpen = markets;
+        },
+      })
+    );
   }
 
   onTabChange(index: number): void {
@@ -97,15 +102,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   toggleBot(running: boolean): void {
     const config = this.activeBotConfig;
     if (running && config) {
-      this.botService.startBot({
-        market: this.activeMarket,
-        symbols: config.symbols,
-        capitalLimit: config.capitalLimit,
-        intervalMin: config.intervalMin,
-      }).subscribe(() => this.loadBotStatus());
+      this.subs.add(
+        this.botService.startBot({
+          market: this.activeMarket,
+          symbols: config.symbols,
+          capitalLimit: config.capitalLimit,
+          intervalMin: config.intervalMin,
+        }).subscribe(() => this.loadBotStatus())
+      );
     } else {
-      this.botService.stopBot(this.activeMarket)
-        .subscribe(() => this.loadBotStatus());
+      this.subs.add(
+        this.botService.stopBot(this.activeMarket)
+          .subscribe(() => this.loadBotStatus())
+      );
     }
   }
 

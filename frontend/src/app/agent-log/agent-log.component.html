@@ -5,7 +5,7 @@
       <span class="toggle-label">Input fields:</span>
       <mat-chip-set>
         <mat-chip
-          *ngFor="let key of inputKeys()"
+          *ngFor="let key of inputKeys"
           [class.active]="inputToggles[key]"
           (click)="toggleInput(key)">
           {{ inputFieldLabels[key] }}
@@ -16,7 +16,7 @@
       <span class="toggle-label">Claude fields:</span>
       <mat-chip-set>
         <mat-chip
-          *ngFor="let key of claudeKeys()"
+          *ngFor="let key of claudeKeys"
           [class.active]="claudeToggles[key]"
           (click)="toggleClaude(key)">
           {{ claudeFieldLabels[key] }}
@@ -45,7 +45,7 @@
     <div class="log-body">
       <div class="input-bubble">
         <div class="bubble-header">Input</div>
-        <div *ngFor="let key of inputKeys()">
+        <div *ngFor="let key of inputKeys">
           <div *ngIf="inputToggles[key]" class="field-row">
             <span class="field-label">{{ inputFieldLabels[key] }}</span>
             <span class="field-value">{{ getFieldValue(log, key) }}</span>

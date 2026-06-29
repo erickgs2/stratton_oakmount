@@ -56,6 +56,9 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
     reason: 'Reason',
   };
 
+  readonly inputKeys = Object.keys(this.inputToggles);
+  readonly claudeKeys = Object.keys(this.claudeToggles);
+
   private pollSub: Subscription | null = null;
 
   constructor(private agentLogService: AgentLogService) {}
@@ -103,28 +106,20 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
     this.claudeToggles[key] = !this.claudeToggles[key];
   }
 
-  inputKeys(): string[] {
-    return Object.keys(this.inputToggles);
-  }
-
-  claudeKeys(): string[] {
-    return Object.keys(this.claudeToggles);
-  }
-
   getFieldValue(log: AgentLog, key: string): string {
     const md = log.marketData;
-    const ind = md.indicators;
-    const map: Record<string, unknown> = {
-      lastPrice: md.lastPrice.toFixed(2),
-      changePct: `${md.changePct >= 0 ? '+' : ''}${md.changePct.toFixed(2)}%`,
-      volume: md.volume.toLocaleString(),
-      rsi14: ind.rsi14.toFixed(2),
-      ma20: ind.ma20.toFixed(2),
-      ma50: ind.ma50.toFixed(2),
-      percentChange5d: `${ind.percentChange5d >= 0 ? '+' : ''}${ind.percentChange5d.toFixed(2)}%`,
-      volumeRatio: `${ind.volumeRatio.toFixed(2)}x`,
+    const ind = md?.indicators;
+    const map: Record<string, string> = {
+      lastPrice: md?.lastPrice != null ? md.lastPrice.toFixed(2) : '—',
+      changePct: md?.changePct != null ? `${md.changePct >= 0 ? '+' : ''}${md.changePct.toFixed(2)}%` : '—',
+      volume: md?.volume != null ? md.volume.toLocaleString() : '—',
+      rsi14: ind?.rsi14 != null ? ind.rsi14.toFixed(2) : '—',
+      ma20: ind?.ma20 != null ? ind.ma20.toFixed(2) : '—',
+      ma50: ind?.ma50 != null ? ind.ma50.toFixed(2) : '—',
+      percentChange5d: ind?.percentChange5d != null ? `${ind.percentChange5d >= 0 ? '+' : ''}${ind.percentChange5d.toFixed(2)}%` : '—',
+      volumeRatio: ind?.volumeRatio != null ? `${ind.volumeRatio.toFixed(2)}x` : '—',
     };
-    return String(map[key] ?? '—');
+    return map[key] ?? '—';
   }
 
   getActionClass(action: string): string {
