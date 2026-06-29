@@ -4,8 +4,8 @@
   <div class="controls">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search</mat-label>
-      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="symbol or message">
-      <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="searchTerm = ''; applyFilters()">
+      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="symbol or message">
+      <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="searchTerm = ''; onSearchChange()">
         <mat-icon>close</mat-icon>
       </button>
       <mat-icon matSuffix *ngIf="!searchTerm">search</mat-icon>
@@ -40,11 +40,21 @@
     <p>No bot activity yet — start the bot to see logs here.</p>
   </div>
 
-  <div *ngFor="let log of filteredLogs" class="log-row">
+  <div class="log-count" *ngIf="!loading && totalCount > 0">
+    Showing {{ shownCount }} of {{ totalCount }} logs
+  </div>
+
+  <div *ngFor="let log of pagedLogs" class="log-row">
     <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
     <span [class]="getLevelClass(log.level)" class="level-badge">{{ log.level }}</span>
     <span class="event-chip">{{ log.event }}</span>
     <span *ngIf="log.symbol" class="symbol">{{ log.symbol }}</span>
     <span class="message">{{ log.message }}</span>
+  </div>
+
+  <div *ngIf="hasMore" class="load-more">
+    <button mat-stroked-button (click)="loadMore()">
+      Load more ({{ totalCount - shownCount }} remaining)
+    </button>
   </div>
 </div>

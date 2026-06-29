@@ -141,9 +141,11 @@ export async function runAgentCycle(
   });
 
   const rawText = message.content[0].type === 'text' ? message.content[0].text : '';
+  // Strip markdown code fences that the model sometimes wraps around the JSON
+  const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   let decision: ClaudeDecision;
   try {
-    decision = JSON.parse(rawText) as ClaudeDecision;
+    decision = JSON.parse(cleanText) as ClaudeDecision;
   } catch {
     decision = { action: 'hold', quantity: 0, confidence: 0, reason: `Parse error: ${rawText}` };
   }

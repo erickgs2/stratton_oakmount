@@ -18,6 +18,13 @@ type HistoricosResponse = Record<string, [number, number]>;
 
 const BASE_URL = 'https://api.databursatil.com/v2';
 
+// Known mismatches between common BMV tickers and DataBursátil symbol IDs.
+// Asterisk (*) is required for single-series emisoras; some series have no historicos coverage.
+const SYMBOL_MAP: Record<string, string> = {
+  WALMEX: 'WALMEX*',
+  AMXL: 'AMXB',
+};
+
 function getToken(): string {
   const token = process.env.DATABURSATIL_TOKEN;
   if (!token) throw new Error('DATABURSATIL_TOKEN environment variable is not set');
@@ -43,19 +50,20 @@ export async function getMXMarketData(symbol: string): Promise<MXMarketData> {
   const token = getToken();
   const today = new Date().toISOString().split('T')[0];
   const sixtyDaysAgo = daysAgo(60);
+  const apiSymbol = SYMBOL_MAP[symbol] ?? symbol;
 
   // Current snapshot: latest price, day change %, and session volume
   const cotizaciones = await apiFetch<CotizacionesResponse>(
-    `${BASE_URL}/cotizaciones?token=${token}&emisora_serie=${symbol}&concepto=u,c,v&bolsa=BMV`
+    `${BASE_URL}/cotizaciones?token=${token}&emisora_serie=${apiSymbol}&concepto=u,c,v&bolsa=BMV`
   );
 
   // 60-day daily closes for technical indicators (RSI, MA, volume ratio)
   const historical = await apiFetch<HistoricosResponse>(
-    `${BASE_URL}/historicos?token=${token}&emisora_serie=${symbol}&inicio=${sixtyDaysAgo}&final=${today}`
+    `${BASE_URL}/historicos?token=${token}&emisora_serie=${apiSymbol}&inicio=${sixtyDaysAgo}&final=${today}`
   );
 
   // bolsa key comes back lowercase ("bmv") regardless of how it was sent
-  const symbolQuote = cotizaciones[symbol];
+  const symbolQuote = cotizaciones[apiSymbol];
   const bolsaData = symbolQuote?.['bmv'] ?? symbolQuote?.['BMV'] ?? Object.values(symbolQuote ?? {})[0];
 
   if (!bolsaData || bolsaData.u == null) {

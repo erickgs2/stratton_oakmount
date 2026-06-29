@@ -23,25 +23,41 @@ import { BotLog } from '../core/models/bot-log.model';
   templateUrl: './bot-logs-page.component.html',
   styleUrls: ['./bot-logs-page.component.scss'],
 })
+const PAGE_SIZE = 50;
+
 export class BotLogsPageComponent implements OnInit, OnDestroy {
   allLogs: BotLog[] = [];
   filteredLogs: BotLog[] = [];
+  pagedLogs: BotLog[] = [];
   loading = true;
 
   searchTerm = '';
   activeLevel: 'all' | 'info' | 'warn' | 'error' = 'all';
   activeMarket: 'all' | 'MX' | 'USA' = 'all';
 
+  private visibleCount = PAGE_SIZE;
   private sub = new Subscription();
 
   constructor(private botLogService: BotLogService) {}
+
+  get hasMore(): boolean {
+    return this.filteredLogs.length > this.visibleCount;
+  }
+
+  get shownCount(): number {
+    return this.pagedLogs.length;
+  }
+
+  get totalCount(): number {
+    return this.filteredLogs.length;
+  }
 
   ngOnInit(): void {
     this.sub.add(
       interval(10_000).pipe(
         startWith(0),
         switchMap(() =>
-          this.botLogService.getLogs({ limit: 200 }).pipe(
+          this.botLogService.getLogs({ limit: 500 }).pipe(
             catchError(() => of({ logs: this.allLogs }))
           )
         ),
@@ -62,12 +78,24 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
 
   setLevel(level: 'all' | 'info' | 'warn' | 'error'): void {
     this.activeLevel = level;
+    this.visibleCount = PAGE_SIZE;
     this.applyFilters();
   }
 
   setMarket(market: 'all' | 'MX' | 'USA'): void {
     this.activeMarket = market;
+    this.visibleCount = PAGE_SIZE;
     this.applyFilters();
+  }
+
+  onSearchChange(): void {
+    this.visibleCount = PAGE_SIZE;
+    this.applyFilters();
+  }
+
+  loadMore(): void {
+    this.visibleCount += PAGE_SIZE;
+    this.pagedLogs = this.filteredLogs.slice(0, this.visibleCount);
   }
 
   applyFilters(): void {
@@ -82,6 +110,7 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
       }
       return true;
     });
+    this.pagedLogs = this.filteredLogs.slice(0, this.visibleCount);
   }
 
   getLevelClass(level: string): string {
