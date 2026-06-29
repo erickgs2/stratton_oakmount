@@ -212,25 +212,39 @@ export async function runAgentCycle(
         quantity: decision.quantity,
         market,
       });
-      executed = true;
-      await recordTrade({
-        symbol,
-        action: decision.action === 'buy' ? 'BUY' : 'SELL',
-        quantity: decision.quantity,
-        price: lastPrice,
-        orderId: ibkrOrderId,
-      });
-      await writeBotLog({
-        level: 'info',
-        event: 'order_placed',
-        market,
-        symbol,
-        message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
-      });
+
+      if (ibkrOrderId) {
+        // Order accepted and confirmed by IBKR
+        executed = true;
+        await recordTrade({
+          symbol,
+          action: decision.action === 'buy' ? 'BUY' : 'SELL',
+          quantity: decision.quantity,
+          price: lastPrice,
+          orderId: ibkrOrderId,
+        });
+        await writeBotLog({
+          level: 'info',
+          event: 'order_placed',
+          market,
+          symbol,
+          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
+        });
+      } else {
+        // IBKR returned no order ID — order was rejected or the contract is not tradeable
+        await writeBotLog({
+          level: 'warn',
+          event: 'order_skipped',
+          market,
+          symbol,
+          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} — order submitted to IBKR but rejected (no order ID returned). Contract conid ${conid} may not be tradeable on ${market === 'MX' ? 'BMV' : 'SMART'}.`,
+          meta: { conid, action: decision.action, quantity: decision.quantity },
+        });
+      }
     } else {
       await writeBotLog({
         level: 'warn',
-        event: 'cycle_complete',
+        event: 'order_skipped',
         market,
         symbol,
         message: `${symbol} ${decision.action.toUpperCase()} signal skipped — contract not found on IBKR (conid lookup failed)`,
