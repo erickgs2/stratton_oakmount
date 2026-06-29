@@ -11,9 +11,8 @@ export async function GET() {
     ]);
     return NextResponse.json({ positions, summary });
   } catch (error) {
-    return NextResponse.json(
-      { error: (error as Error).message },
-      { status: 500 }
-    );
+    const msg = (error as Error).message;
+    console.error('[portfolio]', msg, '| account:', process.env.IBKR_ACCOUNT_ID, '| gateway:', process.env.IBKR_GATEWAY_URL);
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

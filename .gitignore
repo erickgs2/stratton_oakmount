@@ -1,2 +1,39 @@
+# ─── Superpowers / Claude Code ────────────────────────────────────────────────
 .superpowers/
+.claude/
+
+# ─── IBKR Client Portal Gateway (runtime files, binaries, logs) ───────────────
+bin/
+build/
+dist/
+root/
+logs/
+.vertx/
+clientportal.gw.zip
+*.log
+*.jks
+
+# ─── Backend (Next.js) ────────────────────────────────────────────────────────
+backend/node_modules/
+backend/.next/
 backend/data/
+backend/.env
+backend/.env.local
+backend/.env.*.local
+backend/tsconfig.tsbuildinfo
+
+# ─── Frontend (Angular) ───────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# ─── Documentation (downloaded / generated) ───────────────────────────────────
+doc/
+
+# ─── OS / editor ──────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
