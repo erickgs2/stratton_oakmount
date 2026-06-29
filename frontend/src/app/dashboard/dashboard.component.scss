@@ -58,3 +58,13 @@ mat-card {
 }
 
 table { width: 100%; }
+
+.market-open {
+  background-color: rgba(76, 175, 80, 0.15) !important;
+  color: #4caf50 !important;
+}
+
+.market-closed {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #888 !important;
+}

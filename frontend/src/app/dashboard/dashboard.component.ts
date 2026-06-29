@@ -14,6 +14,7 @@ import { PortfolioService } from '../core/services/portfolio.service';
 import { BotService } from '../core/services/bot.service';
 import { Portfolio } from '../core/models/portfolio.model';
 import { BotConfig } from '../core/models/bot-config.model';
+import { AgentLogComponent } from '../agent-log/agent-log.component';
 
 type Market = 'MX' | 'USA';
 
@@ -25,6 +26,7 @@ type Market = 'MX' | 'USA';
     MatTabsModule, MatCardModule, MatTableModule,
     MatSlideToggleModule, MatBadgeModule, MatIconModule,
     MatProgressSpinnerModule, MatChipsModule,
+    AgentLogComponent,
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
@@ -33,6 +35,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   activeMarket: Market = 'MX';
   portfolio: Portfolio | null = null;
   botConfigs: BotConfig[] = [];
+  marketOpen: { MX: boolean; USA: boolean } = { MX: false, USA: false };
   loading = true;
   error: string | null = null;
   positionColumns = ['ticker', 'position', 'avgCost', 'mktValue', 'unrealizedPnl'];
@@ -66,8 +69,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   loadBotStatus(): void {
     this.botService.getStatus().subscribe({
-      next: response => { this.botConfigs = response.configs; },
+      next: ({ configs, markets }) => {
+        this.botConfigs = configs;
+        this.marketOpen = markets;
+      },
     });
+  }
+
+  onTabChange(index: number): void {
+    if (index === 0) this.activeMarket = 'MX';
+    else if (index === 1) this.activeMarket = 'USA';
+    // index 2 = Agent Logs — market stays as-is
   }
 
   get activeBotConfig(): BotConfig | undefined {
@@ -76,6 +88,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   get isRunning(): boolean {
     return this.activeBotConfig?.isActive ?? false;
+  }
+
+  get isActiveMarketOpen(): boolean {
+    return this.marketOpen[this.activeMarket];
   }
 
   toggleBot(running: boolean): void {
