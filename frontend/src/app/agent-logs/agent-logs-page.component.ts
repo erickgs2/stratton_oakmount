@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatChipsModule } from '@angular/material/chips';
-import { Subscription, interval } from 'rxjs';
-import { startWith } from 'rxjs/operators';
+import { Subscription, interval, of } from 'rxjs';
+import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotService } from '../core/services/bot.service';
 import { AgentLogComponent } from '../agent-log/agent-log.component';
 
@@ -23,7 +23,16 @@ export class AgentLogsPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.sub.add(
-      interval(60_000).pipe(startWith(0)).subscribe(() => this.loadStatus())
+      interval(60_000).pipe(
+        startWith(0),
+        switchMap(() =>
+          this.botService.getStatus().pipe(catchError(() => of(null)))
+        ),
+      ).subscribe(result => {
+        if (result) {
+          this.isRunning = result.configs.find(c => c.market === this.activeMarket)?.isActive ?? false;
+        }
+      })
     );
   }
 
@@ -38,10 +47,10 @@ export class AgentLogsPageComponent implements OnInit, OnDestroy {
 
   private loadStatus(): void {
     this.sub.add(
-      this.botService.getStatus().subscribe({
-        next: ({ configs }) => {
-          this.isRunning = configs.find(c => c.market === this.activeMarket)?.isActive ?? false;
-        },
+      this.botService.getStatus().pipe(catchError(() => of(null))).subscribe(result => {
+        if (result) {
+          this.isRunning = result.configs.find(c => c.market === this.activeMarket)?.isActive ?? false;
+        }
       })
     );
   }
