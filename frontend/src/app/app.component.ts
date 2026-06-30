@@ -8,6 +8,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
+import { IbkrAuthService } from './core/services/ibkr-auth.service';
+import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component';
 
 @Component({
   selector: 'app-root',
@@ -17,6 +19,7 @@ import { filter } from 'rxjs/operators';
     RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
     MatIconModule, MatButtonModule,
+    IbkrAuthGateComponent,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -30,6 +33,7 @@ export class AppComponent implements OnInit {
   constructor(
     private breakpointObserver: BreakpointObserver,
     private router: Router,
+    private ibkrAuthService: IbkrAuthService,
   ) {}
 
   ngOnInit(): void {
@@ -41,5 +45,6 @@ export class AppComponent implements OnInit {
         this.sidenav.close();
       }
     });
+    this.ibkrAuthService.startPolling();
   }
 }

@@ -121,4 +121,62 @@ describe('IBKRClient', () => {
       expect(https.request).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('checkAuthStatus', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('returns true when authenticated and connected', async () => {
+      mockHttpsResponse(200, { authenticated: true, connected: true, competing: false });
+      const result = await client.checkAuthStatus();
+      expect(result).toBe(true);
+    });
+
+    it('returns false when not authenticated', async () => {
+      mockHttpsResponse(200, { authenticated: false, connected: true });
+      const result = await client.checkAuthStatus();
+      expect(result).toBe(false);
+    });
+
+    it('returns false when connected is false', async () => {
+      mockHttpsResponse(200, { authenticated: true, connected: false });
+      const result = await client.checkAuthStatus();
+      expect(result).toBe(false);
+    });
+
+    it('returns false on network error (ECONNREFUSED)', async () => {
+      const errorReq = {
+        on: jest.fn((event: string, cb: (err: Error) => void) => {
+          if (event === 'error') cb(new Error('ECONNREFUSED'));
+        }),
+        write: jest.fn(),
+        end: jest.fn(),
+      };
+      (https.request as jest.Mock).mockImplementation(() => errorReq);
+      const result = await client.checkAuthStatus();
+      expect(result).toBe(false);
+    });
+
+    it('returns false on non-2xx response', async () => {
+      mockHttpsResponse(401, { error: 'Unauthorized' });
+      const result = await client.checkAuthStatus();
+      expect(result).toBe(false);
+    });
+
+    it('returns false when gateway does not respond within 5 seconds', async () => {
+      // Request that never resolves
+      const hangingReq = { on: jest.fn(), write: jest.fn(), end: jest.fn() };
+      (https.request as jest.Mock).mockImplementation(() => hangingReq);
+
+      const promise = client.checkAuthStatus();
+      jest.advanceTimersByTime(5_000);
+      const result = await promise;
+      expect(result).toBe(false);
+    });
+  });
 });

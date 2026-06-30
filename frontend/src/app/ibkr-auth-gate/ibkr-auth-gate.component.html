@@ -1,0 +1,12 @@
+<div *ngIf="!(connected$ | async)" class="auth-overlay">
+  <div class="auth-card">
+    <mat-icon class="auth-icon">link_off</mat-icon>
+    <h2>Session Inactive</h2>
+    <p>The IBKR trading gateway needs authentication before the dashboard can connect.</p>
+    <button mat-flat-button color="primary" (click)="openLogin()">
+      <mat-icon>open_in_new</mat-icon>
+      Open IBKR Login
+    </button>
+    <small class="checking-label">Checking connection…</small>
+  </div>
+</div>
