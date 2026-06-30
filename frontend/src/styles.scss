@@ -13,7 +13,7 @@ $app-theme:   mat.define-dark-theme((
 @include mat.all-component-themes($app-theme);
 
 :root {
-  --bg-base:      #0d0d0d;
+  --bg-base:      #0f172a;
   --bg-surface:   #1f2937;
   --bg-sidebar:   #111827;
   --accent:       #f59e0b;
