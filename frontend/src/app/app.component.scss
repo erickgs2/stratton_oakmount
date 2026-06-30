@@ -1,0 +1,76 @@
+.app-container {
+  height: 100vh;
+}
+
+.app-sidenav {
+  width: 220px;
+  background: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border) !important;
+}
+
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.brand-icon {
+  color: var(--accent);
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+}
+
+.brand-name {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+
+.active-link {
+  border-left: 3px solid var(--accent) !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+
+  mat-icon, span {
+    color: var(--accent) !important;
+  }
+}
+
+.app-toolbar {
+  background: var(--bg-sidebar) !important;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.toolbar-brand-icon {
+  color: var(--accent);
+  margin-right: 8px;
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.toolbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.app-content {
+  background: var(--bg-base);
+}
+
+.page-content {
+  padding: 24px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
