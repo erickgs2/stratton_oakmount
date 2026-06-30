@@ -16,6 +16,10 @@ h1 {
 
 .search-field {
   width: 260px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 }
 
 .filter-group {
@@ -26,7 +30,7 @@ h1 {
 
 .filter-label {
   font-size: 12px;
-  color: #888;
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -53,7 +57,7 @@ mat-chip {
   align-items: center;
   gap: 12px;
   padding: 60px 20px;
-  color: #666;
+  color: var(--text-muted);
 
   mat-icon {
     font-size: 48px;
@@ -72,18 +76,18 @@ mat-chip {
   align-items: baseline;
   gap: 10px;
   padding: 8px 12px;
-  border-bottom: 1px solid #1e1e1e;
+  border-bottom: 1px solid var(--border);
   font-size: 13px;
   flex-wrap: wrap;
 
   &:hover {
-    background: #1a1a1a;
+    background: var(--bg-surface);
   }
 }
 
 .timestamp {
   font-size: 11px;
-  color: #555;
+  color: var(--text-muted);
   white-space: nowrap;
   min-width: 150px;
 }
@@ -97,25 +101,25 @@ mat-chip {
   letter-spacing: 0.5px;
 
   &.level-info {
-    background: #1a2a3a;
+    background: rgba(100, 181, 246, 0.12);
     color: #64b5f6;
   }
 
   &.level-warn {
-    background: #3a2a0a;
-    color: #F59E0B;
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--accent);
   }
 
   &.level-error {
-    background: #3a1a1a;
-    color: #EF4444;
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--red);
   }
 }
 
 .event-chip {
   font-size: 11px;
-  background: #2a2a2a;
-  color: #aaa;
+  background: var(--bg-surface);
+  color: var(--text-muted);
   padding: 2px 7px;
   border-radius: 4px;
   white-space: nowrap;
@@ -123,18 +127,18 @@ mat-chip {
 
 .symbol {
   font-weight: 700;
-  color: #141414;
+  color: var(--accent);
   min-width: 80px;
 }
 
 .message {
-  color: #ccc;
+  color: var(--text-primary);
   flex: 1;
 }
 
 .log-count {
   font-size: 11px;
-  color: #555;
+  color: var(--text-muted);
   padding: 4px 12px 8px;
 }
 
@@ -144,8 +148,8 @@ mat-chip {
   padding: 20px;
 
   button {
-    color: #888;
-    border-color: #333;
+    color: var(--text-muted);
+    border-color: var(--border);
     font-size: 13px;
   }
 }
