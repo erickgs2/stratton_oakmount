@@ -17,6 +17,14 @@ interface DailyContext {
   trades: TradeRecord[];
 }
 
+interface PositionInput {
+  ticker: string;
+  position: number;
+  avgCost: number;
+  mktValue?: number;
+  unrealizedPnl?: number;
+}
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const CONTEXT_FILE = path.join(DATA_DIR, 'trading-context.json');
 
@@ -29,7 +37,6 @@ async function load(): Promise<DailyContext> {
   try {
     const raw = await readFile(CONTEXT_FILE, 'utf-8');
     const ctx = JSON.parse(raw) as DailyContext;
-    // Auto-reset when a new day starts
     if (ctx.date !== today) return { date: today, trades: [] };
     return ctx;
   } catch {
@@ -71,7 +78,8 @@ export async function resetDailyContext(): Promise<void> {
 }
 
 export async function buildContextSection(
-  positions: Array<{ ticker: string; position: number; avgCost: number }>
+  positions: PositionInput[],
+  netLiquidation?: number,
 ): Promise<string> {
   const ctx = await load();
   const lines: string[] = [];
@@ -91,9 +99,22 @@ export async function buildContextSection(
 
   const open = positions.filter(p => p.position > 0);
   if (open.length > 0) {
-    lines.push('CURRENT OPEN POSITIONS:');
+    lines.push(`CURRENT OPEN POSITIONS (${open.length}):`);
     for (const p of open) {
-      lines.push(`• ${p.ticker}: ${p.position} shares @ avg ${p.avgCost.toFixed(2)} MXN`);
+      const mktValue  = p.mktValue ?? p.position * p.avgCost;
+      const pnl       = p.unrealizedPnl ?? 0;
+      const pnlPct    = p.avgCost > 0 ? (pnl / (p.position * p.avgCost)) * 100 : 0;
+      const pnlSign   = pnl >= 0 ? '+' : '';
+      const portPct   = netLiquidation && netLiquidation > 0
+        ? ` | ${((mktValue / netLiquidation) * 100).toFixed(1)}% of portfolio`
+        : '';
+
+      lines.push(
+        `• ${p.ticker}: ${p.position} shares | avg cost ${p.avgCost.toFixed(2)} MXN` +
+        ` | mkt value ${mktValue.toFixed(2)} MXN` +
+        ` | P&L ${pnlSign}${pnl.toFixed(2)} MXN (${pnlSign}${pnlPct.toFixed(1)}%)` +
+        portPct
+      );
     }
   } else {
     lines.push('CURRENT OPEN POSITIONS: none');

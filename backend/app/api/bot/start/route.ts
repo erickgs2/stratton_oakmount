@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     if (!isMarketOpen(market)) return; // no API calls while market is closed
     for (const symbol of symbols) {
       try {
-        await runAgentCycle(symbol, market, capitalLimit, confidenceThreshold);
+        await runAgentCycle(symbol, market, capitalLimit, confidenceThreshold, intervalMin);
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
         await writeBotLog({
