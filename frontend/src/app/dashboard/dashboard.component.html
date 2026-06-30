@@ -101,6 +101,7 @@
   </div>
 
   <h2 *ngIf="portfolio">Open Positions</h2>
+  <div class="table-scroll">
   <table mat-table [dataSource]="portfolio.positions" *ngIf="portfolio">
     <ng-container matColumnDef="ticker">
       <th mat-header-cell *matHeaderCellDef>Symbol</th>
@@ -129,4 +130,5 @@
     <tr mat-header-row *matHeaderRowDef="positionColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: positionColumns;"></tr>
   </table>
+  </div>
 </ng-template>
