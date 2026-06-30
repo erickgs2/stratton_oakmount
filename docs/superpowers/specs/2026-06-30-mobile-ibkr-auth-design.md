@@ -9,7 +9,7 @@
 
 - Do **not** touch the port 80/443 nginx server — it belongs to another app.
 - IBKR gateway stays on port 5000 (internal only, not router-forwarded).
-- Port 5002 nginx is already configured and has a Let's Encrypt cert. It proxies to port 5000. Only a router port forward is needed for external access — **do not reinstall or overwrite nginx**.
+- Port 5002 is currently free on the Pi. It needs a new nginx server block (proxy to port 5000) with SSL, then a router port forward. **nginx is already installed — do not reinstall it.**
 - Angular project lives in `frontend/`. All Capacitor files go inside `frontend/`.
 - `frontend/ios/` is Xcode-generated and must be added to `.gitignore`.
 - `frontend/src/environments/environment.prod.ts` already sets `apiUrl: '/api'` — no change needed.
@@ -131,6 +131,35 @@ export const environment = {
 ### Overlay CSS
 
 The overlay uses `position: fixed; inset: 0; z-index: 1000` to cover the entire viewport regardless of scroll position. The dark backdrop is `rgba(0, 0, 0, 0.85)`. The card uses `background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px 24px`.
+
+### Pi infrastructure (manual, one-time)
+
+nginx is already installed. These steps are done by the user on the Pi — not automated by the implementation plan.
+
+**1. Add nginx server block for port 5002** (edit `/etc/nginx/sites-available/` or the main nginx config):
+```nginx
+server {
+    listen 5002 ssl;
+    server_name gsfawkes.duckdns.org;
+
+    # Reuse the Let's Encrypt cert that already covers this domain
+    ssl_certificate     /etc/letsencrypt/live/gsfawkes.duckdns.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/gsfawkes.duckdns.org/privkey.pem;
+
+    location / {
+        proxy_pass https://127.0.0.1:5000/;
+        proxy_ssl_verify off;   # IBKR gateway uses a self-signed cert
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+```
+
+**2. Reload nginx:** `sudo nginx -t && sudo nginx -s reload`
+
+**3. Router port forward:** forward external TCP port 5002 → Pi LAN IP port 5002.
+
+**SSL cert note:** If `gsfawkes.duckdns.org` already has a Let's Encrypt cert (used for port 5001), reuse it as shown above. If not, obtain one first: `sudo certbot --nginx -d gsfawkes.duckdns.org`.
 
 ---
 
