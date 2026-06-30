@@ -11,10 +11,13 @@ export class IbkrAuthService implements OnDestroy {
 
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly apiUrl = environment.apiUrl;
+  private polling = false;
 
   constructor(private http: HttpClient) {}
 
   startPolling(): void {
+    if (this.polling) return;
+    this.polling = true;
     this.tick();
   }
 
