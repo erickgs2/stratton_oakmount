@@ -15,7 +15,15 @@ import { environment } from '../../environments/environment';
 export class IbkrAuthGateComponent {
   protected connected$ = inject(IbkrAuthService).connected$;
 
-  openLogin(): void {
-    window.open(environment.gatewayLoginUrl, '_blank');
+  async openLogin(): Promise<void> {
+    const url = environment.gatewayLoginUrl;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cap = (window as any).Capacitor as { isNativePlatform: () => boolean } | undefined;
+    if (cap?.isNativePlatform()) {
+      const { Browser } = await import('@capacitor/browser');
+      await Browser.open({ url });
+    } else {
+      window.open(url, '_blank');
+    }
   }
 }
