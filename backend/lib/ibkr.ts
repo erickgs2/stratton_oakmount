@@ -24,6 +24,20 @@ export interface PlaceOrderParams {
   market: 'MX' | 'USA';
 }
 
+export interface IBKROrder {
+  orderId: number;
+  ticker: string;
+  side: 'BUY' | 'SELL';
+  orderType: string;
+  totalSize: number;
+  filledQuantity: number;
+  remainingQuantity: number;
+  status: string;
+  price?: number;
+  listingExchange?: string;
+  timeInForce?: string;
+}
+
 export class IBKRClient {
   private readonly baseUrl: string;
   private readonly accountId: string;
@@ -171,6 +185,41 @@ export class IBKRClient {
     }
 
     return result[0]?.order_id?.toString() ?? '';
+  }
+
+  async getOrders(): Promise<IBKROrder[]> {
+    type RawOrder = {
+      orderId?: number;
+      ticker?: string;
+      side?: string;
+      orderType?: string;
+      origOrderType?: string;
+      totalSize?: number;
+      filledQuantity?: number;
+      remainingQuantity?: number;
+      status?: string;
+      price?: string | number;
+      listingExchange?: string;
+      timeInForce?: string;
+    };
+    try {
+      const result = await this.request<{ orders?: RawOrder[] }>('/iserver/account/orders');
+      return (result.orders ?? []).map(o => ({
+        orderId: o.orderId ?? 0,
+        ticker: o.ticker ?? '',
+        side: (o.side?.toUpperCase() as 'BUY' | 'SELL') ?? 'BUY',
+        orderType: o.origOrderType ?? o.orderType ?? 'MKT',
+        totalSize: o.totalSize ?? 0,
+        filledQuantity: o.filledQuantity ?? 0,
+        remainingQuantity: o.remainingQuantity ?? 0,
+        status: o.status ?? 'Unknown',
+        price: o.price != null ? Number(o.price) : undefined,
+        listingExchange: o.listingExchange,
+        timeInForce: o.timeInForce,
+      }));
+    } catch {
+      return [];
+    }
   }
 }
 

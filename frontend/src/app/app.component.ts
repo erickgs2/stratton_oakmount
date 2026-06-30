@@ -1,16 +1,45 @@
-import { Component } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { Component, OnInit, ViewChild } from '@angular/core';
+import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
+import { MatSidenavModule, MatSidenav } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { CommonModule } from '@angular/common';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatToolbarModule, MatListModule, MatIconModule],
+  imports: [
+    CommonModule,
+    RouterOutlet, RouterLink, RouterLinkActive,
+    MatSidenavModule, MatToolbarModule, MatListModule,
+    MatIconModule, MatButtonModule,
+  ],
   templateUrl: './app.component.html',
+  styleUrl: './app.component.scss',
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   title = 'Stratton Oakmont';
+  isMobile = false;
+
+  @ViewChild('sidenav') sidenav!: MatSidenav;
+
+  constructor(
+    private breakpointObserver: BreakpointObserver,
+    private router: Router,
+  ) {}
+
+  ngOnInit(): void {
+    this.breakpointObserver.observe('(max-width: 768px)').subscribe(result => {
+      this.isMobile = result.matches;
+    });
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
+      if (this.isMobile && this.sidenav?.opened) {
+        this.sidenav.close();
+      }
+    });
+  }
 }

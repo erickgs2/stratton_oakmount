@@ -2,6 +2,15 @@
 
   <div class="toggle-panel">
     <div class="toggle-row">
+      <span class="toggle-label">Action:</span>
+      <mat-chip-set>
+        <mat-chip [class.active]="actionFilter === 'all'"  (click)="setActionFilter('all')">All</mat-chip>
+        <mat-chip [class.active]="actionFilter === 'buy'"  (click)="setActionFilter('buy')"  class="filter-buy">Buy</mat-chip>
+        <mat-chip [class.active]="actionFilter === 'sell'" (click)="setActionFilter('sell')" class="filter-sell">Sell</mat-chip>
+        <mat-chip [class.active]="actionFilter === 'hold'" (click)="setActionFilter('hold')">Hold</mat-chip>
+      </mat-chip-set>
+    </div>
+    <div class="toggle-row">
       <span class="toggle-label">Input fields:</span>
       <mat-chip-set>
         <mat-chip
@@ -29,20 +38,24 @@
     <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
   </div>
 
-  <div *ngIf="!loading && logs.length === 0" class="empty-state">
+  <div *ngIf="!loading && filteredLogs.length === 0" class="empty-state">
     <mat-icon>smart_toy</mat-icon>
     <p>No agent cycles recorded yet. Start the bot to see Claude's decisions here.</p>
   </div>
 
-  <div *ngFor="let log of logs" class="log-entry">
-    <div class="log-header">
+  <div *ngFor="let log of filteredLogs" class="log-entry">
+    <div class="log-header" (click)="toggleExpand(log.id)">
       <span class="symbol-chip">{{ log.symbol }}</span>
       <span class="market-badge">{{ log.market }}</span>
       <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
+      <span [class]="getActionClass(log.response.action)" class="action-badge">
+        {{ log.response.action | uppercase }}
+      </span>
       <span *ngIf="log.executed" class="executed-badge">EXECUTED</span>
+      <mat-icon class="expand-icon">{{ isExpanded(log.id) ? 'expand_less' : 'expand_more' }}</mat-icon>
     </div>
 
-    <div class="log-body">
+    <div *ngIf="isExpanded(log.id)" class="log-body">
       <div class="input-bubble">
         <div class="bubble-header">Input</div>
         <div *ngFor="let key of inputKeys">
@@ -54,12 +67,7 @@
       </div>
 
       <div class="claude-bubble">
-        <div class="bubble-header">
-          Claude
-          <span [class]="getActionClass(log.response.action)" class="action-badge">
-            {{ log.response.action | uppercase }}
-          </span>
-        </div>
+        <div class="bubble-header">Claude</div>
         <div *ngIf="claudeToggles['quantity']" class="field-row">
           <span class="field-label">Quantity</span>
           <span class="field-value">{{ log.response.quantity }}</span>

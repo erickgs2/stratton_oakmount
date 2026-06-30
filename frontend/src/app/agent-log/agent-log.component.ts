@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@
 import { CommonModule } from '@angular/common';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, startWith } from 'rxjs/operators';
@@ -11,7 +12,7 @@ import { AgentLog } from '../core/models/agent-log.model';
 @Component({
   selector: 'app-agent-log',
   standalone: true,
-  imports: [CommonModule, MatChipsModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatChipsModule, MatIconModule, MatButtonModule, MatProgressSpinnerModule],
   templateUrl: './agent-log.component.html',
   styleUrls: ['./agent-log.component.scss'],
 })
@@ -21,6 +22,26 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
 
   logs: AgentLog[] = [];
   loading = false;
+  actionFilter: 'all' | 'buy' | 'sell' | 'hold' = 'all';
+  private expandedLogs = new Set<string>();
+
+  get filteredLogs(): AgentLog[] {
+    if (this.actionFilter === 'all') return this.logs;
+    return this.logs.filter(l => l.response.action === this.actionFilter);
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedLogs.has(id);
+  }
+
+  toggleExpand(id: string): void {
+    if (this.expandedLogs.has(id)) this.expandedLogs.delete(id);
+    else this.expandedLogs.add(id);
+  }
+
+  setActionFilter(f: 'all' | 'buy' | 'sell' | 'hold'): void {
+    this.actionFilter = f;
+  }
 
   inputToggles: Record<string, boolean> = {
     lastPrice: true,
