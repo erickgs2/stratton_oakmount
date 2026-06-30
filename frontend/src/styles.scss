@@ -31,3 +31,18 @@ body {
   background: var(--bg-base);
   color: var(--text-primary);
 }
+
+// iOS safe area — notch / Dynamic Island / home indicator
+html {
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+}
+
+.app-toolbar {
+  padding-top: var(--sat);
+  height: calc(56px + var(--sat)) !important;
+}
+
+body {
+  padding-bottom: var(--sab);
+}

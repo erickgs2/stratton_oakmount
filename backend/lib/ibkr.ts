@@ -221,6 +221,22 @@ export class IBKRClient {
       return [];
     }
   }
+
+  async checkAuthStatus(): Promise<boolean> {
+    // 5-second timeout: if the gateway doesn't respond, treat as disconnected
+    let timer: ReturnType<typeof setTimeout>;
+    const timeout = new Promise<false>(resolve => {
+      timer = setTimeout(() => resolve(false), 5_000);
+    });
+    const check = this.request<{ authenticated?: boolean; connected?: boolean }>(
+      '/iserver/auth/status'
+    )
+      .then(data => data.authenticated === true && data.connected === true)
+      .catch(() => false);
+    const result = await Promise.race([check, timeout]);
+    clearTimeout(timer!);
+    return result;
+  }
 }
 
 export const ibkrClient = new IBKRClient();
