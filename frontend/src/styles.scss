@@ -31,3 +31,15 @@ body {
   background: var(--bg-base);
   color: var(--text-primary);
 }
+
+// Pierce MDC component internals for bot-control alignment
+.bot-control {
+  .mdc-evolution-chip-set__chips {
+    margin: 0 !important;
+    align-items: center !important;
+  }
+
+  .mdc-form-field {
+    align-items: center !important;
+  }
+}
