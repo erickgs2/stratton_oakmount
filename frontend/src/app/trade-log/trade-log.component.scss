@@ -6,6 +6,11 @@
   flex-wrap: wrap;
 }
 
+.table-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
+
 .full-width { width: 100%; }
 
 .action-chip {
@@ -15,9 +20,9 @@
   font-weight: 600;
 }
 
-.action-buy { background: #e8f5e9; color: #2e7d32; }
-.action-sell { background: #ffebee; color: #c62828; }
-.action-hold { background: #e3f2fd; color: #1565c0; }
+.action-buy  { background: rgba(16, 185, 129, 0.15);  color: var(--green); }
+.action-sell { background: rgba(239, 68, 68, 0.15);   color: var(--red); }
+.action-hold { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
 
 .reason-cell {
   max-width: 300px;
@@ -29,5 +34,5 @@
 .no-data {
   text-align: center;
   padding: 32px;
-  color: #757575;
+  color: var(--text-muted);
 }

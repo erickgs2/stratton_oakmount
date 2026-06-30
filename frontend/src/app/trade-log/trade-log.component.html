@@ -21,6 +21,7 @@
   </button>
 </div>
 
+<div class="table-scroll">
 <table mat-table [dataSource]="trades" class="full-width">
   <ng-container matColumnDef="createdAt">
     <th mat-header-cell *matHeaderCellDef>Date</th>
@@ -63,3 +64,4 @@
     <td [colSpan]="displayedColumns.length" class="no-data">No trades found</td>
   </tr>
 </table>
+</div>
