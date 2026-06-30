@@ -1,16 +1,16 @@
 <div class="dashboard-header">
   <h1>Dashboard</h1>
   <div class="bot-control">
-    <mat-chip-set>
-      <mat-chip [class.active]="isRunning">
+    <div class="status-chips">
+      <span class="status-chip" [class.active]="isRunning">
         <mat-icon>{{ isRunning ? 'smart_toy' : 'stop' }}</mat-icon>
         {{ isRunning ? 'Bot Running' : 'Bot Stopped' }}
-      </mat-chip>
-      <mat-chip [class.market-open]="isActiveMarketOpen" [class.market-closed]="!isActiveMarketOpen">
+      </span>
+      <span class="status-chip" [class.market-open]="isActiveMarketOpen" [class.market-closed]="!isActiveMarketOpen">
         <mat-icon>{{ isActiveMarketOpen ? 'trending_up' : 'schedule' }}</mat-icon>
         {{ isActiveMarketOpen ? 'Market Open' : 'Market Closed' }}
-      </mat-chip>
-    </mat-chip-set>
+      </span>
+    </div>
     <mat-slide-toggle
       [checked]="isRunning"
       (change)="toggleBot($event.checked)"
@@ -97,6 +97,48 @@
         [symbol]="sym"
         [market]="activeMarket">
       </app-symbol-chart>
+    </div>
+  </div>
+
+  <div *ngIf="pendingOrders.length > 0" class="pending-orders-section">
+    <h2>Pending Orders</h2>
+    <div class="table-scroll">
+      <table mat-table [dataSource]="pendingOrders">
+        <ng-container matColumnDef="ticker">
+          <th mat-header-cell *matHeaderCellDef>Symbol</th>
+          <td mat-cell *matCellDef="let row">{{ row.ticker }}</td>
+        </ng-container>
+        <ng-container matColumnDef="side">
+          <th mat-header-cell *matHeaderCellDef>Action</th>
+          <td mat-cell *matCellDef="let row">
+            <span [class.order-buy]="row.side === 'BUY'" [class.order-sell]="row.side === 'SELL'">{{ row.side }}</span>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="orderType">
+          <th mat-header-cell *matHeaderCellDef>Type</th>
+          <td mat-cell *matCellDef="let row">{{ row.orderType }}</td>
+        </ng-container>
+        <ng-container matColumnDef="totalSize">
+          <th mat-header-cell *matHeaderCellDef>Qty</th>
+          <td mat-cell *matCellDef="let row">{{ row.totalSize }}</td>
+        </ng-container>
+        <ng-container matColumnDef="filledQuantity">
+          <th mat-header-cell *matHeaderCellDef>Filled</th>
+          <td mat-cell *matCellDef="let row">{{ row.filledQuantity }}</td>
+        </ng-container>
+        <ng-container matColumnDef="remainingQuantity">
+          <th mat-header-cell *matHeaderCellDef>Remaining</th>
+          <td mat-cell *matCellDef="let row">{{ row.remainingQuantity }}</td>
+        </ng-container>
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <span class="order-status">{{ row.status }}</span>
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: orderColumns;"></tr>
+      </table>
     </div>
   </div>
 

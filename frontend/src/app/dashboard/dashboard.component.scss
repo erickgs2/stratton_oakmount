@@ -12,21 +12,35 @@
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+}
 
-  mat-chip-set {
-    display: flex;
-    align-items: center;
-  }
+.status-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  mat-chip {
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
-  }
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
 
-  mat-slide-toggle {
-    display: flex;
-    align-items: center;
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
     line-height: 1;
+  }
+
+  &.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--green);
   }
 }
 
@@ -111,6 +125,21 @@ table { width: 100%; }
 .market-closed {
   background-color: rgba(255, 255, 255, 0.05) !important;
   color: var(--text-muted) !important;
+}
+
+.pending-orders-section {
+  margin-bottom: 32px;
+}
+
+.order-buy  { color: var(--green); font-weight: 500; }
+.order-sell { color: var(--red);   font-weight: 500; }
+
+.order-status {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent);
 }
 
 .charts-section {

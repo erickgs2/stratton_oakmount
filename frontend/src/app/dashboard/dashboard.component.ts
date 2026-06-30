@@ -9,12 +9,13 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { FormsModule } from '@angular/forms';
 import { PortfolioService } from '../core/services/portfolio.service';
 import { BotService } from '../core/services/bot.service';
+import { OrderService } from '../core/services/order.service';
 import { Portfolio } from '../core/models/portfolio.model';
 import { BotConfig } from '../core/models/bot-config.model';
+import { Order } from '../core/models/order.model';
 import { SymbolChartComponent } from '../symbol-chart/symbol-chart.component';
 type Market = 'MX' | 'USA';
 
@@ -25,7 +26,7 @@ type Market = 'MX' | 'USA';
     CommonModule, FormsModule,
     MatTabsModule, MatCardModule, MatTableModule,
     MatSlideToggleModule, MatBadgeModule, MatIconModule,
-    MatProgressSpinnerModule, MatChipsModule,
+    MatProgressSpinnerModule,
     SymbolChartComponent,
   ],
   templateUrl: './dashboard.component.html',
@@ -39,19 +40,30 @@ export class DashboardComponent implements OnInit, OnDestroy {
   marketOpen: { MX: boolean; USA: boolean } = { MX: false, USA: false };
   loading = true;
   error: string | null = null;
+  pendingOrders: Order[] = [];
   positionColumns = ['ticker', 'position', 'avgCost', 'mktValue', 'unrealizedPnl'];
+  orderColumns = ['ticker', 'side', 'orderType', 'totalSize', 'filledQuantity', 'remainingQuantity', 'status'];
 
   private subs = new Subscription();
 
   constructor(
     private portfolioService: PortfolioService,
     private botService: BotService,
+    private orderService: OrderService,
   ) {}
 
   ngOnInit(): void {
     // Poll bot status every 60s — drives market-open state
     this.subs.add(
       interval(60_000).pipe(startWith(0)).subscribe(() => this.loadBotStatus())
+    );
+
+    // Poll pending orders every 30s
+    this.subs.add(
+      interval(30_000).pipe(
+        startWith(0),
+        switchMap(() => this.orderService.getPendingOrders()),
+      ).subscribe(orders => { this.pendingOrders = orders; })
     );
 
     // Poll portfolio every 30s ONLY when market is open.

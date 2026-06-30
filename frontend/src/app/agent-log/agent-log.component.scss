@@ -35,6 +35,9 @@ mat-chip {
   &.active {
     opacity: 1;
   }
+
+  &.filter-buy.active  { color: var(--green) !important; }
+  &.filter-sell.active { color: var(--red)   !important; }
 }
 
 .loading-container {
@@ -79,6 +82,21 @@ mat-chip {
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+.expand-icon {
+  margin-left: auto;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .symbol-chip {
@@ -109,7 +127,6 @@ mat-chip {
   border-radius: 4px;
   font-weight: 600;
   letter-spacing: 0.5px;
-  margin-left: auto;
 }
 
 .log-body {
@@ -117,6 +134,7 @@ mat-chip {
   grid-template-columns: 1fr 1fr;
   gap: 1px;
   background: var(--border);
+  border-top: 1px solid var(--border);
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
