@@ -12,6 +12,16 @@
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+
+  mat-chip-set {
+    display: flex;
+    align-items: center;
+  }
+
+  mat-slide-toggle {
+    display: flex;
+    align-items: center;
+  }
 }
 
 .cards-row {
