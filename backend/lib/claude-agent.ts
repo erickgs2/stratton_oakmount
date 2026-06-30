@@ -38,6 +38,8 @@ You MUST respond ONLY with valid JSON in this exact format:
 {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`,
 };
 
+function sign(n: number): string { return n >= 0 ? '+' : ''; }
+
 function buildUserPrompt(
   symbol: string,
   market: 'MX' | 'USA',
@@ -45,53 +47,126 @@ function buildUserPrompt(
   changePct: number,
   volume: number,
   indicators: ReturnType<typeof calculateIndicators>,
+  closePrices: number[],
   currentPosition: number,
+  currentPositionAvgCost: number,
   availableFunds: number,
-  tradingContext: string
+  capitalLimit: number | undefined,
+  effectiveCapital: number,
+  netLiquidation: number,
+  totalUnrealizedPnl: number,
+  intervalMin: number,
+  tradingContext: string,
 ): string {
-  const maxInvestment = availableFunds * 0.20;
-  const maxQuantity = Math.floor(maxInvestment / lastPrice);
   const currency = market === 'MX' ? 'MXN' : 'USD';
+  const maxInvestment = effectiveCapital * 0.20;
+  const maxQuantity = lastPrice > 0 ? Math.floor(maxInvestment / lastPrice) : 0;
 
-  return `Analyze the following market data for ${symbol} and decide whether to buy, sell, or hold.
+  // Price range from historical data
+  const last20       = closePrices.slice(-20);
+  const high20       = Math.max(...last20);
+  const low20        = Math.min(...last20);
+  const periodHigh   = Math.max(...closePrices);
+  const periodLow    = Math.min(...closePrices);
+  const periodDays   = closePrices.length;
+  const distHigh20   = ((lastPrice - high20)   / high20)   * 100;
+  const distLow20    = ((lastPrice - low20)    / low20)    * 100;
+  const distMA20     = ((lastPrice - indicators.ma20) / indicators.ma20) * 100;
+  const distMA50     = ((lastPrice - indicators.ma50) / indicators.ma50) * 100;
 
-MARKET DATA:
-- Symbol: ${symbol}
-- Last Price: ${lastPrice.toFixed(2)} ${currency}
-- Day Change: ${changePct.toFixed(2)}%
-- Volume: ${volume.toLocaleString()}
+  // Portfolio composition
+  const invested       = netLiquidation - availableFunds;
+  const cashPct        = netLiquidation > 0 ? (availableFunds / netLiquidation) * 100 : 0;
+  const investedPct    = 100 - cashPct;
+  const portPnlPct     = netLiquidation > 0
+    ? (totalUnrealizedPnl / (netLiquidation - totalUnrealizedPnl)) * 100
+    : 0;
+  const cashWarning    = cashPct < 10 ? ' ⚠ very low — be conservative about new buys'
+    : cashPct < 20 ? ' (limited liquidity)'
+    : '';
 
-TECHNICAL INDICATORS:
-- RSI (14): ${indicators.rsi14.toFixed(2)} (>70 overbought, <30 oversold)
-- MA20: ${indicators.ma20.toFixed(2)} ${currency}
-- MA50: ${indicators.ma50.toFixed(2)} ${currency}
-- 5-Day Change: ${indicators.percentChange5d.toFixed(2)}%
-- Volume Ratio vs 20-day avg: ${indicators.volumeRatio.toFixed(2)}x
+  // Current position context for the symbol being analyzed
+  const positionLine = currentPosition > 0
+    ? `${currentPosition} shares already held (avg cost ${currentPositionAvgCost.toFixed(2)} ${currency})`
+    : 'no current position';
 
-PORTFOLIO:
-- Current position in ${symbol}: ${currentPosition} shares
-- Available funds: ${availableFunds.toFixed(2)} ${currency}
-- Max allowed investment (20% rule): ${maxInvestment.toFixed(2)} ${currency}
-- Max quantity you can buy: ${maxQuantity} shares
+  return `You are being asked to analyze ${symbol} and return a trading decision as JSON.
 
-TRADING CONTEXT:
+━━━ CHECK FREQUENCY ━━━
+This analysis cycle runs every ${intervalMin} minute${intervalMin === 1 ? '' : 's'} during market hours.
+Implication: you will see this symbol again soon. Avoid acting on a marginal signal — wait for the next cycle
+if conditions are unclear. Also avoid repeating a buy/sell that already fired earlier today (see TRADING CONTEXT).
+
+━━━ MARKET DATA ━━━
+Symbol    : ${symbol}
+Last Price: ${lastPrice.toFixed(2)} ${currency}  — the most recent trade price
+Day Change: ${sign(changePct)}${changePct.toFixed(2)}%         — price change vs yesterday's close
+Volume    : ${volume.toLocaleString()} shares   — total shares traded so far today
+
+━━━ TECHNICAL INDICATORS ━━━
+RSI (14)       : ${indicators.rsi14.toFixed(2)}
+  Interpretation: >70 = overbought (likely to pull back), <30 = oversold (potential bounce), 30–70 = neutral
+
+MA20 (20-day moving avg): ${indicators.ma20.toFixed(2)} ${currency}  → price is ${sign(distMA20)}${distMA20.toFixed(1)}% ${distMA20 >= 0 ? 'above' : 'below'} MA20
+MA50 (50-day moving avg): ${indicators.ma50.toFixed(2)} ${currency}  → price is ${sign(distMA50)}${distMA50.toFixed(1)}% ${distMA50 >= 0 ? 'above' : 'below'} MA50
+  Interpretation: price above both MAs = bullish trend; below both = bearish; between them = mixed signal
+
+5-Day Change   : ${sign(indicators.percentChange5d)}${indicators.percentChange5d.toFixed(2)}%  — short-term momentum over last 5 sessions
+
+Volume Ratio   : ${indicators.volumeRatio.toFixed(2)}x vs 20-day average
+  Interpretation: >1.5x = unusually high participation (confirms moves), <0.5x = low conviction (be cautious)
+
+20-Day High    : ${high20.toFixed(2)} ${currency}  (current price is ${sign(distHigh20)}${distHigh20.toFixed(1)}% from this level)
+20-Day Low     : ${low20.toFixed(2)} ${currency}   (current price is ${sign(distLow20)}${distLow20.toFixed(1)}% from this level)
+  Interpretation: price near 20d high = potential resistance; near 20d low = potential support
+
+${periodDays}-Day High : ${periodHigh.toFixed(2)} ${currency}
+${periodDays}-Day Low  : ${periodLow.toFixed(2)} ${currency}
+  Interpretation: these are the broader range boundaries over the full data window
+
+━━━ CAPITAL FOR THIS CYCLE ━━━
+Capital limit per cycle : ${capitalLimit != null ? `${capitalLimit.toFixed(2)} ${currency}` : 'not set (no cap)'}
+  — This is the absolute maximum the user allows to deploy in a single bot cycle. Do not exceed it.
+Available funds         : ${availableFunds.toFixed(2)} ${currency}  — liquid cash currently in the account
+Effective capital       : ${effectiveCapital.toFixed(2)} ${currency}  — min(capital limit, available funds); your actual budget
+Max per position (20%)  : ${maxInvestment.toFixed(2)} ${currency}  — hard cap per symbol = 20% of effective capital
+Max quantity you can buy: ${maxQuantity} shares  — floor(max per position / last price)
+
+━━━ PORTFOLIO SUMMARY ━━━
+Net Liquidation (total portfolio value): ${netLiquidation.toFixed(2)} ${currency}
+  — sum of all positions at market value plus cash; the full size of the account
+
+Cash / Available funds  : ${availableFunds.toFixed(2)} ${currency}  (${cashPct.toFixed(1)}% of portfolio)${cashWarning}
+Invested in positions   : ${invested.toFixed(2)} ${currency}  (${investedPct.toFixed(1)}% of portfolio)
+  — how much capital is already deployed; high invested % means limited room for new positions
+
+Total Unrealized P&L    : ${sign(totalUnrealizedPnl)}${totalUnrealizedPnl.toFixed(2)} ${currency}  (${sign(portPnlPct)}${portPnlPct.toFixed(1)}% on cost)
+  — overall profit/loss on all current open positions; positive = portfolio is up, negative = portfolio is down
+
+Current position in ${symbol}: ${positionLine}
+  — your existing exposure to this specific symbol before any new trade
+
+━━━ TRADING CONTEXT ━━━
 ${tradingContext}
 
-RULES:
-- Never invest more than 20% of available funds in one symbol
-- Set confidence = 0 if market conditions are unclear
-- quantity must be 0 for "hold" action
-- If selling, quantity must not exceed current position (${currentPosition})
-- Use trading context to avoid duplicate trades and make better decisions
+━━━ DECISION RULES ━━━
+1. quantity must be 0 when action is "hold"
+2. Never exceed max quantity (${maxQuantity} shares) for a buy
+3. Never sell more shares than currently held in ${symbol}
+4. Effective capital limit (${effectiveCapital.toFixed(2)} ${currency}) is a hard ceiling — do not exceed it
+5. If the portfolio is already heavily invested (>80%), prefer hold over adding new positions unless signal is very strong
+6. Avoid repeating a trade you already executed today — check TODAY'S EXECUTED TRADES above
+7. Set confidence < ${0.65} if conditions are ambiguous; the bot will skip execution below the threshold
 
-Respond with JSON only.`;
+Respond with JSON only: {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`;
 }
 
 export async function runAgentCycle(
   symbol: string,
   market: 'MX' | 'USA',
   capitalLimit?: number,
-  confidenceThreshold = 0.65
+  confidenceThreshold = 0.65,
+  intervalMin = 15,
 ): Promise<AgentCycleResult> {
   if (!isMarketOpen(market)) {
     return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
@@ -106,14 +181,12 @@ export async function runAgentCycle(
 
   if (market === 'MX') {
     const data = await getMXMarketData(symbol);
-    lastPrice = data.lastPrice;
-    changePct = data.changePct;
-    volume = data.volume;
+    lastPrice   = data.lastPrice;
+    changePct   = data.changePct;
+    volume      = data.volume;
     closePrices = data.history.map(h => h.close);
-    volumes = data.history.map(h => h.volume);
+    volumes     = data.history.map(h => h.volume);
   } else {
-    // For USA market, IBKR market data would be fetched here.
-    // Placeholder until IBKR market data endpoint is integrated.
     throw new Error('USA market data not yet implemented — set ACTIVE_MARKET=MX for Phase 1');
   }
 
@@ -125,32 +198,36 @@ export async function runAgentCycle(
     ibkrClient.getAccountSummary(),
   ]);
 
-  const currentPosition = positions.find(p => p.ticker === symbol)?.position ?? 0;
-  const availableFunds = summary.availableFunds;
-  const effectiveCapital = capitalLimit
-    ? Math.min(availableFunds, capitalLimit)
-    : availableFunds;
+  const currentPos         = positions.find(p => p.ticker === symbol);
+  const currentPosition    = currentPos?.position ?? 0;
+  const currentAvgCost     = currentPos?.avgCost ?? 0;
+  const availableFunds     = summary.availableFunds;
+  const effectiveCapital   = capitalLimit ? Math.min(availableFunds, capitalLimit) : availableFunds;
+  const totalUnrealizedPnl = positions.reduce((sum, p) => sum + p.unrealizedPnl, 0);
 
-  const tradingContext = await buildContextSection(positions);
+  const tradingContext = await buildContextSection(positions, summary.netLiquidation);
 
   // Call Claude
   const message = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
-    max_tokens: 256,
+    max_tokens: 400,
     system: SYSTEM_PROMPTS[market],
     messages: [
       {
         role: 'user',
         content: buildUserPrompt(
           symbol, market, lastPrice, changePct, volume,
-          indicators, currentPosition, effectiveCapital, tradingContext
+          indicators, closePrices,
+          currentPosition, currentAvgCost,
+          availableFunds, capitalLimit, effectiveCapital,
+          summary.netLiquidation, totalUnrealizedPnl,
+          intervalMin, tradingContext,
         ),
       },
     ],
   });
 
-  const rawText = message.content[0].type === 'text' ? message.content[0].text : '';
-  // Strip markdown code fences that the model sometimes wraps around the JSON
+  const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
   const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   let decision: ClaudeDecision;
   try {
@@ -161,20 +238,15 @@ export async function runAgentCycle(
 
   // Enforce quantity caps server-side after Claude responds
   const maxInvestment = effectiveCapital * 0.20;
-  const maxQuantity = lastPrice > 0 ? Math.floor(maxInvestment / lastPrice) : 0;
+  const maxQuantity   = lastPrice > 0 ? Math.floor(maxInvestment / lastPrice) : 0;
 
-  if (decision.action === 'buy' && decision.quantity > maxQuantity) {
-    decision.quantity = maxQuantity;
-  }
-  if (decision.action === 'sell' && decision.quantity > currentPosition) {
-    decision.quantity = currentPosition;
-  }
+  if (decision.action === 'buy'  && decision.quantity > maxQuantity)     decision.quantity = maxQuantity;
+  if (decision.action === 'sell' && decision.quantity > currentPosition) decision.quantity = currentPosition;
 
   const marketData = { lastPrice, changePct, volume, indicators };
-  let executed = false;
+  let executed    = false;
   let ibkrOrderId: string | undefined;
 
-  // Log when a buy/sell is skipped due to confidence threshold
   if (
     (decision.action === 'buy' || decision.action === 'sell') &&
     decision.confidence < confidenceThreshold &&
@@ -185,12 +257,11 @@ export async function runAgentCycle(
       event: 'order_skipped',
       market,
       symbol,
-      message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} skipped — confidence ${decision.confidence.toFixed(2)} is below the ${confidenceThreshold.toFixed(2)} threshold`,
+      message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} skipped — confidence ${decision.confidence.toFixed(2)} below ${confidenceThreshold.toFixed(2)} threshold`,
       meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence, threshold: confidenceThreshold },
     });
   }
 
-  // Execute trade if conditions are met
   if (
     (decision.action === 'buy' || decision.action === 'sell') &&
     decision.confidence >= confidenceThreshold &&
@@ -198,7 +269,6 @@ export async function runAgentCycle(
   ) {
     const exchange = market === 'MX' ? 'BMV' : 'SMART';
 
-    // Try existing positions first; fall back to contract search for new buys
     let conid: number | undefined = positions.find(p => p.ticker === symbol)?.conid;
     if (!conid && decision.action === 'buy') {
       const found = await ibkrClient.searchConid(symbol, exchange);
@@ -214,7 +284,6 @@ export async function runAgentCycle(
       });
 
       if (ibkrOrderId) {
-        // Order accepted and confirmed by IBKR
         executed = true;
         await recordTrade({
           symbol,
@@ -231,13 +300,12 @@ export async function runAgentCycle(
           message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
         });
       } else {
-        // IBKR returned no order ID — order was rejected or the contract is not tradeable
         await writeBotLog({
           level: 'warn',
           event: 'order_skipped',
           market,
           symbol,
-          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} — order submitted to IBKR but rejected (no order ID returned). Contract conid ${conid} may not be tradeable on ${market === 'MX' ? 'BMV' : 'SMART'}.`,
+          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} — IBKR rejected (no order ID). conid ${conid} may not be tradeable on ${market === 'MX' ? 'BMV' : 'SMART'}.`,
           meta: { conid, action: decision.action, quantity: decision.quantity },
         });
       }
@@ -252,7 +320,6 @@ export async function runAgentCycle(
     }
   }
 
-  // Persist to database
   await prisma.agentLog.create({
     data: {
       symbol,
@@ -267,9 +334,9 @@ export async function runAgentCycle(
 
   let cycleNote = '';
   if (decision.action !== 'hold') {
-    if (executed) cycleNote = ` — executed (order #${ibkrOrderId ?? ''})`;
+    if (executed)                                    cycleNote = ` — executed (order #${ibkrOrderId ?? ''})`;
     else if (decision.confidence < confidenceThreshold) cycleNote = ` — skipped: confidence ${decision.confidence.toFixed(2)} below ${confidenceThreshold.toFixed(2)} threshold`;
-    else if (decision.quantity === 0) cycleNote = ` — skipped: quantity 0`;
+    else if (decision.quantity === 0)                cycleNote = ` — skipped: quantity 0`;
   }
 
   await writeBotLog({
