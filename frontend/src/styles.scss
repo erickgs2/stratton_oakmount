@@ -48,9 +48,9 @@ html {
 // content, because Angular Material's inner toolbar row keeps its own
 // fixed height and doesn't stretch to fill an artificially taller box.
 .app-toolbar {
-  padding-top: var(--sat);
+  padding-top: 30px !important;
   height: auto !important;
-  min-height: calc(56px + var(--sat)) !important;
+  min-height: calc(108px + var(--sat)) !important;
 }
 
 // The sidenav is a full-height overlay panel on mobile (mode="over"),
@@ -70,8 +70,8 @@ html {
   }
 
   .app-toolbar {
-    padding-top: calc(var(--sat) + 20px);
-    min-height: calc(56px + var(--sat) + 20px) !important;
+    padding-top: 30px !important;
+    min-height: calc(75px + var(--sat)) !important;
   }
 
   .sidenav-header {

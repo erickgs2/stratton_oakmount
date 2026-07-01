@@ -15,16 +15,21 @@
   // padding-top is set globally in styles.scss (safe-area aware) — the
   // sidenav is a full-height overlay panel on mobile, so its header needs
   // the same status-bar clearance as .app-toolbar.
-  padding: 0 16px 12px;
+  padding: 36px 16px 16px 12px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
 }
 
+// Slightly bigger than .brand-name's 14px font, sized as an image (not a
+// mat-icon glyph) — object-fit preserves the icon's aspect ratio, and
+// display: block avoids the few px of baseline gap <img> normally leaves
+// inside a flex row.
 .brand-icon {
-  color: var(--accent);
-  font-size: 22px;
-  width: 22px;
-  height: 22px;
+  display: block;
+  width: 55px;
+  height: 55px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand-name {
@@ -52,12 +57,16 @@
   z-index: 100;
 }
 
+// Slightly bigger than .toolbar-title's 15px font — see .brand-icon above
+// for why display: block + object-fit are used here instead of mat-icon's
+// font-size/color sizing.
 .toolbar-brand-icon {
-  color: var(--accent);
+  display: block;
   margin-right: 8px;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  width: 75px;
+  height: 75px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .toolbar-title {
