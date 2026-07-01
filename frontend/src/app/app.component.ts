@@ -5,11 +5,13 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { IbkrAuthService } from './core/services/ibkr-auth.service';
 import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component';
+import { MobileGestureDirective } from './shared/mobile-gesture.directive';
 
 @Component({
   selector: 'app-root',
@@ -18,8 +20,9 @@ import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component
     CommonModule,
     RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
-    MatIconModule, MatButtonModule,
+    MatIconModule, MatButtonModule, MatProgressSpinnerModule,
     IbkrAuthGateComponent,
+    MobileGestureDirective,
   ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
@@ -27,6 +30,8 @@ import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component
 export class AppComponent implements OnInit {
   title = 'Stratton Oakmont';
   isMobile = false;
+  pullDistance = 0;
+  readonly pullThreshold = 70;
 
   @ViewChild('sidenav') sidenav!: MatSidenav;
 
@@ -46,5 +51,19 @@ export class AppComponent implements OnInit {
       }
     });
     this.ibkrAuthService.startPolling();
+  }
+
+  onPullChange(px: number): void {
+    this.pullDistance = px;
+  }
+
+  onRefresh(): void {
+    window.location.reload();
+  }
+
+  onSwipeOpen(): void {
+    if (this.isMobile && !this.sidenav.opened) {
+      this.sidenav.open();
+    }
   }
 }

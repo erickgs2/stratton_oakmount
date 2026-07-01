@@ -65,6 +65,31 @@
 
 .app-content {
   background: var(--bg-base);
+  position: relative;
+}
+
+.pull-refresh-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-100%);
+  transition: transform 0.15s ease-out;
+  z-index: 50;
+  color: var(--accent);
+  pointer-events: none;
+
+  &.visible {
+    transform: translateY(0);
+  }
+
+  mat-icon {
+    transition: transform 0.1s linear;
+  }
 }
 
 .page-content {
