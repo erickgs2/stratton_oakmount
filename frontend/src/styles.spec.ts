@@ -4,7 +4,7 @@
 // explicitly so a future change to the test runner's window size fails
 // loudly here instead of silently changing what's being tested.
 describe('app-toolbar safe-area styling', () => {
-  it('applies a fixed 20px top padding regardless of env(safe-area-inset-top)', () => {
+  it('applies a fixed 30px top padding regardless of env(safe-area-inset-top)', () => {
     expect(window.innerWidth).toBeLessThanOrEqual(768);
 
     const el = document.createElement('div');
@@ -14,7 +14,7 @@ describe('app-toolbar safe-area styling', () => {
     const paddingTop = getComputedStyle(el).paddingTop;
 
     document.body.removeChild(el);
-    expect(paddingTop).toBe('20px');
+    expect(paddingTop).toBe('30px');
   });
 });
 
