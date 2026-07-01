@@ -12,7 +12,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 16px 12px;
+  // padding-top is set globally in styles.scss (safe-area aware) — the
+  // sidenav is a full-height overlay panel on mobile, so its header needs
+  // the same status-bar clearance as .app-toolbar.
+  padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
 }
