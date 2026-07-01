@@ -62,8 +62,13 @@ export class BotConfigComponent implements OnInit {
   }
 
   saveIbkrAccountId(): void {
+    const trimmed = this.ibkrAccountId.trim();
+    if (!trimmed) {
+      this.snackBar.open('Account ID cannot be empty', 'OK', { duration: 3000 });
+      return;
+    }
     this.settingsSaving = true;
-    this.settingsService.updateSettings(this.ibkrAccountId).subscribe({
+    this.settingsService.updateSettings(trimmed).subscribe({
       next: () => {
         this.snackBar.open('IBKR account ID saved', 'OK', { duration: 3000 });
         this.settingsSaving = false;

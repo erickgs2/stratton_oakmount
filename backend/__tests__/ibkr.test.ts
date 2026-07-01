@@ -197,13 +197,12 @@ describe('IBKRClient', () => {
         id: 'singleton',
         ibkrAccountId: 'U9999999',
       });
-      const mockReq = mockHttpsResponse(200, []);
+      mockHttpsResponse(200, []);
 
       await client.getPositions();
 
       const [opts] = (https.request as jest.Mock).mock.calls[0];
       expect(opts.path).toBe('/v1/api/portfolio/U9999999/positions/0');
-      void mockReq;
     });
 
     it('falls back to the env var when no settings row exists', async () => {

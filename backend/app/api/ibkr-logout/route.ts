@@ -7,7 +7,8 @@ export async function POST() {
   try {
     await ibkrClient.logout();
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (err) {
+    console.error('[ibkr-logout] logout failed:', err);
     return NextResponse.json({ success: false });
   }
 }
