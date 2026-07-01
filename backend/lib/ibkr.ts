@@ -135,6 +135,47 @@ export class IBKRClient {
     };
   }
 
+  async getMarketDataSnapshot(conid: number): Promise<{ lastPrice: number; changePct: number; volume: number } | null> {
+    type SnapshotEntry = { conid: number; '31'?: string; '83'?: string; '87'?: string };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      const results = await this.request<SnapshotEntry[]>(
+        `/iserver/marketdata/snapshot?conids=${conid}&fields=31,83,87`
+      );
+      const entry = results?.[0];
+
+      if (entry && entry['31'] != null && entry['83'] != null && entry['87'] != null) {
+        return {
+          lastPrice: parseFloat(entry['31']),
+          changePct: parseFloat(entry['83']),
+          volume: parseFloat(entry['87']),
+        };
+      }
+    }
+
+    return null;
+  }
+
+  async getMarketDataHistory(conid: number): Promise<{ date: string; close: number; volume: number }[]> {
+    type HistoryResponse = { data?: Array<{ t: number; c: number; v: number }> };
+
+    const result = await this.request<HistoryResponse>(
+      `/iserver/marketdata/history?conid=${conid}&period=60d&bar=1d`
+    );
+
+    return (result.data ?? [])
+      .map(bar => ({
+        date: new Date(bar.t).toISOString().split('T')[0],
+        close: bar.c,
+        volume: bar.v,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  }
+
   async searchConid(symbol: string, exchange: string): Promise<number | null> {
     try {
       const results = await this.request<Array<{
