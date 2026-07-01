@@ -50,3 +50,8 @@ model BotLog {
   message   String
   meta      Json?
 }
+
+model AppSettings {
+  id            String  @id @default("singleton")
+  ibkrAccountId String?
+}

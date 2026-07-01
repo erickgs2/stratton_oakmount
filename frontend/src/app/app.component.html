@@ -33,7 +33,16 @@
     </mat-nav-list>
   </mat-sidenav>
 
-  <mat-sidenav-content class="app-content">
+  <mat-sidenav-content
+    class="app-content"
+    appMobileGestures
+    (pullChange)="onPullChange($event)"
+    (refresh)="onRefresh()"
+    (swipeOpen)="onSwipeOpen()">
+    <div class="pull-refresh-indicator" [class.visible]="pullDistance > 0">
+      <mat-progress-spinner *ngIf="pullDistance >= pullThreshold" diameter="24" mode="indeterminate" />
+      <mat-icon *ngIf="pullDistance < pullThreshold" [style.transform]="'rotate(' + (pullDistance / pullThreshold * 180) + 'deg)'">arrow_downward</mat-icon>
+    </div>
     <mat-toolbar class="app-toolbar">
       <button mat-icon-button *ngIf="isMobile" (click)="sidenav.toggle()" aria-label="Toggle navigation">
         <mat-icon>menu</mat-icon>

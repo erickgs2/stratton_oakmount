@@ -29,3 +29,18 @@ mat-form-field {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+.ibkr-account-card {
+  margin-bottom: 24px;
+  padding: 16px;
+
+  mat-form-field {
+    display: block;
+    max-width: 320px;
+  }
+}
+
+.ibkr-account-actions {
+  display: flex;
+  gap: 12px;
+}

@@ -47,3 +47,20 @@ p {
   font-size: 11px;
   color: var(--text-muted);
 }
+
+.account-section {
+  margin: 12px 0;
+  text-align: left;
+}
+
+.configured-account {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.account-input {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+}

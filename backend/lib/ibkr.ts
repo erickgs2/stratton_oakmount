@@ -1,4 +1,5 @@
 import https from 'https';
+import { prisma } from './prisma';
 
 export interface IBKRPosition {
   conid: number;
@@ -40,15 +41,25 @@ export interface IBKROrder {
 
 export class IBKRClient {
   private readonly baseUrl: string;
-  private readonly accountId: string;
   private readonly agent: https.Agent;
   private keepAliveInterval: NodeJS.Timeout | null = null;
+  private cachedAccountId: string | null = null;
 
   constructor() {
     this.baseUrl = process.env.IBKR_GATEWAY_URL ?? 'https://127.0.0.1:5001/v1/api';
-    this.accountId = process.env.IBKR_ACCOUNT_ID ?? '';
     this.agent = new https.Agent({ rejectUnauthorized: false });
-    console.log('[IBKR] init — baseUrl:', this.baseUrl, '| accountId:', this.accountId);
+    console.log('[IBKR] init — baseUrl:', this.baseUrl);
+  }
+
+  private async resolveAccountId(): Promise<string> {
+    if (this.cachedAccountId !== null) return this.cachedAccountId;
+    const settings = await prisma.appSettings.findUnique({ where: { id: 'singleton' } });
+    this.cachedAccountId = settings?.ibkrAccountId || process.env.IBKR_ACCOUNT_ID || '';
+    return this.cachedAccountId;
+  }
+
+  setAccountId(id: string): void {
+    this.cachedAccountId = id;
   }
 
   private request<T>(path: string, options: { method?: string; body?: unknown } = {}): Promise<T> {
@@ -106,12 +117,14 @@ export class IBKRClient {
   }
 
   async getPositions(): Promise<IBKRPosition[]> {
-    return this.request<IBKRPosition[]>(`/portfolio/${this.accountId}/positions/0`);
+    const accountId = await this.resolveAccountId();
+    return this.request<IBKRPosition[]>(`/portfolio/${accountId}/positions/0`);
   }
 
   async getAccountSummary(): Promise<AccountSummary> {
+    const accountId = await this.resolveAccountId();
     const raw = await this.request<Record<string, { amount: number; currency: string }>>(
-      `/portfolio/${this.accountId}/summary`
+      `/portfolio/${accountId}/summary`
     );
     return {
       availableFunds: raw['availablefunds']?.amount ?? 0,
@@ -151,14 +164,16 @@ export class IBKRClient {
       isSuppressed?: boolean;
     }>;
 
+    const accountId = await this.resolveAccountId();
+
     let result = await this.request<OrderResponse>(
-      `/iserver/account/${this.accountId}/orders`,
+      `/iserver/account/${accountId}/orders`,
       {
         method: 'POST',
         body: {
           orders: [
             {
-              acctId: this.accountId,
+              acctId: accountId,
               conid: params.conid,
               orderType: 'MKT',
               side: params.side,
@@ -236,6 +251,10 @@ export class IBKRClient {
     const result = await Promise.race([check, timeout]);
     clearTimeout(timer!);
     return result;
+  }
+
+  async logout(): Promise<void> {
+    await this.request('/logout', { method: 'POST' });
   }
 }
 

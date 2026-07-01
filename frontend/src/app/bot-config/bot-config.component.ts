@@ -9,7 +9,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatCardModule } from '@angular/material/card';
 import { BotService } from '../core/services/bot.service';
+import { SettingsService } from '../core/services/settings.service';
 import { BotConfig } from '../core/models/bot-config.model';
 
 const MX_SYMBOLS = ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'];
@@ -22,7 +24,7 @@ const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
     CommonModule, FormsModule,
     MatTabsModule, MatChipsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
-    MatSlideToggleModule, MatSnackBarModule,
+    MatSlideToggleModule, MatSnackBarModule, MatCardModule,
   ],
   templateUrl: './bot-config.component.html',
   styleUrls: ['./bot-config.component.scss'],
@@ -36,7 +38,15 @@ export class BotConfigComponent implements OnInit {
 
   saving = false;
 
-  constructor(private botService: BotService, private snackBar: MatSnackBar) {}
+  ibkrAccountId = '';
+  settingsSaving = false;
+  loggingOut = false;
+
+  constructor(
+    private botService: BotService,
+    private settingsService: SettingsService,
+    private snackBar: MatSnackBar,
+  ) {}
 
   ngOnInit(): void {
     this.botService.getStatus().subscribe(response => {
@@ -44,6 +54,44 @@ export class BotConfigComponent implements OnInit {
       const usa = response.configs.find(c => c.market === 'USA');
       if (mx) this.mxConfig = { ...mx };
       if (usa) this.usaConfig = { ...usa };
+    });
+
+    this.settingsService.getSettings().subscribe(settings => {
+      this.ibkrAccountId = settings.ibkrAccountId ?? '';
+    });
+  }
+
+  saveIbkrAccountId(): void {
+    const trimmed = this.ibkrAccountId.trim();
+    if (!trimmed) {
+      this.snackBar.open('Account ID cannot be empty', 'OK', { duration: 3000 });
+      return;
+    }
+    this.settingsSaving = true;
+    this.settingsService.updateSettings(trimmed).subscribe({
+      next: () => {
+        this.snackBar.open('IBKR account ID saved', 'OK', { duration: 3000 });
+        this.settingsSaving = false;
+      },
+      error: () => { this.settingsSaving = false; },
+    });
+  }
+
+  logoutOfGateway(): void {
+    if (!confirm('Log out of the IBKR gateway? You will need to log in again to reconnect.')) {
+      return;
+    }
+    this.loggingOut = true;
+    this.settingsService.logout().subscribe({
+      next: (result) => {
+        this.snackBar.open(
+          result.success ? 'Logged out of the IBKR gateway' : 'Logout request sent (gateway may already be disconnected)',
+          'OK',
+          { duration: 4000 },
+        );
+        this.loggingOut = false;
+      },
+      error: () => { this.loggingOut = false; },
     });
   }
 

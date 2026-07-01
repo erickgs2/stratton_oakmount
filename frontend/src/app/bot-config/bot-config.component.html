@@ -1,5 +1,18 @@
 <h1>Bot Configuration</h1>
 
+<mat-card class="ibkr-account-card">
+  <h3>IBKR Account</h3>
+  <p class="field-hint">The Interactive Brokers account ID the bot trades against. Paper and live accounts have different IDs — set this to switch between them.</p>
+  <mat-form-field appearance="outline">
+    <mat-label>Account ID</mat-label>
+    <input matInput [(ngModel)]="ibkrAccountId" placeholder="e.g. U1234567 or DU1234567">
+  </mat-form-field>
+  <div class="ibkr-account-actions">
+    <button mat-flat-button color="primary" [disabled]="settingsSaving" (click)="saveIbkrAccountId()">Save</button>
+    <button mat-stroked-button color="warn" [disabled]="loggingOut" (click)="logoutOfGateway()">Log Out of Gateway</button>
+  </div>
+</mat-card>
+
 <mat-tab-group>
   <!-- MX Market Tab -->
   <mat-tab label="MX — BMV">

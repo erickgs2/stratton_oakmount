@@ -3,7 +3,21 @@
     <mat-icon class="auth-icon">link_off</mat-icon>
     <h2>Session Inactive</h2>
     <p>The IBKR trading gateway needs authentication before the dashboard can connect.</p>
-    <button mat-flat-button color="primary" (click)="openLogin()">
+
+    <div class="account-section" *ngIf="configuredAccountId">
+      <p class="configured-account">Configured account: <strong>{{ configuredAccountId }}</strong></p>
+      <mat-radio-group [(ngModel)]="accountChoice">
+        <mat-radio-button value="keep">Keep this account</mat-radio-button>
+        <mat-radio-button value="change">Use a different account</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <mat-form-field appearance="outline" *ngIf="accountChoice === 'change'" class="account-input">
+      <mat-label>IBKR account ID</mat-label>
+      <input matInput [(ngModel)]="newAccountId" placeholder="e.g. U1234567 or DU1234567">
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" [disabled]="!canLogin" (click)="openLogin()">
       <mat-icon>open_in_new</mat-icon>
       Open IBKR Login
     </button>
