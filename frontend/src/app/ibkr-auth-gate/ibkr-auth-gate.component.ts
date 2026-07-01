@@ -28,6 +28,8 @@ export class IbkrAuthGateComponent implements OnInit {
   configuredAccountId: string | null = null;
   accountChoice: 'keep' | 'change' = 'keep';
   newAccountId = '';
+  loggingOut = false;
+  logoutMessage = '';
 
   ngOnInit(): void {
     this.settingsService.getSettings().subscribe(settings => {
@@ -64,5 +66,25 @@ export class IbkrAuthGateComponent implements OnInit {
     } else {
       window.open(url, '_blank', 'noopener');
     }
+  }
+
+  logoutOfGateway(): void {
+    if (!confirm('Log out of the IBKR gateway? This can clear a stuck session if login keeps failing.')) {
+      return;
+    }
+    this.loggingOut = true;
+    this.logoutMessage = '';
+    this.settingsService.logout().subscribe({
+      next: (result) => {
+        this.logoutMessage = result.success
+          ? 'Logged out of the IBKR gateway.'
+          : 'Logout request sent (gateway may already be disconnected).';
+        this.loggingOut = false;
+      },
+      error: () => {
+        this.logoutMessage = 'Logout request failed — check your connection and try again.';
+        this.loggingOut = false;
+      },
+    });
   }
 }

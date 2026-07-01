@@ -17,10 +17,18 @@
       <input matInput [(ngModel)]="newAccountId" placeholder="e.g. U1234567 or DU1234567">
     </mat-form-field>
 
-    <button mat-flat-button color="primary" [disabled]="!canLogin" (click)="openLogin()">
-      <mat-icon>open_in_new</mat-icon>
-      Open IBKR Login
-    </button>
+    <div class="auth-actions">
+      <button mat-flat-button color="primary" [disabled]="!canLogin" (click)="openLogin()">
+        <mat-icon>open_in_new</mat-icon>
+        Open IBKR Login
+      </button>
+      <button mat-stroked-button color="warn" [disabled]="loggingOut" (click)="logoutOfGateway()">
+        <mat-icon>logout</mat-icon>
+        Log Out of Gateway
+      </button>
+    </div>
+    <p class="logout-hint">Stuck in a login loop? Log out to clear a stale gateway session, then try again.</p>
+    <p class="logout-message" *ngIf="logoutMessage">{{ logoutMessage }}</p>
     <small class="checking-label">Checking connection…</small>
   </div>
 </div>
