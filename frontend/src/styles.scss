@@ -32,15 +32,14 @@ body {
   color: var(--text-primary);
 }
 
-// iOS safe area — notch / Dynamic Island / home indicator.
-// max(..., 24px) guards against env(safe-area-inset-top) reporting 0 in
-// contexts where it's unreliable (e.g. mobile Safari with chrome
-// auto-hidden, rather than a true standalone/native container); the
-// extra 20px gives clear breathing room instead of a flush edge-to-edge
-// fit. Also consumed by .sidenav-header (app.component.scss) so the
-// open sidenav's brand row doesn't sit under the status bar either.
+// iOS safe area — notch / Dynamic Island / home indicator. On a real
+// device this is env(safe-area-inset-top), which is correctly 0 on
+// desktop browsers (no status bar to avoid) — do NOT apply a floor here
+// unconditionally, or desktop gets pushed down for no reason. The floor
+// only exists as a mobile-viewport fallback below, for contexts where
+// env() is unreliable (e.g. mobile Safari with chrome auto-hidden).
 html {
-  --sat: max(env(safe-area-inset-top), 24px);
+  --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
 }
 
@@ -49,16 +48,35 @@ html {
 // content, because Angular Material's inner toolbar row keeps its own
 // fixed height and doesn't stretch to fill an artificially taller box.
 .app-toolbar {
-  padding-top: calc(var(--sat) + 20px);
+  padding-top: var(--sat);
   height: auto !important;
-  min-height: calc(56px + var(--sat) + 20px) !important;
+  min-height: calc(56px + var(--sat)) !important;
 }
 
 // The sidenav is a full-height overlay panel on mobile (mode="over"),
 // rendered from the very top of the viewport — its own header needs the
 // same status-bar clearance as .app-toolbar, not just the main toolbar.
 .sidenav-header {
-  padding-top: calc(var(--sat) + 20px);
+  padding-top: var(--sat);
+}
+
+// Mobile-only floor + breathing room. Matches the 768px breakpoint
+// already used elsewhere in this app (app.component.scss's
+// .page-content rule) so this only applies where a real OS status bar
+// can actually be present — never on desktop.
+@media (max-width: 768px) {
+  html {
+    --sat: max(env(safe-area-inset-top), 24px);
+  }
+
+  .app-toolbar {
+    padding-top: calc(var(--sat) + 20px);
+    min-height: calc(56px + var(--sat) + 20px) !important;
+  }
+
+  .sidenav-header {
+    padding-top: calc(var(--sat) + 20px);
+  }
 }
 
 body {

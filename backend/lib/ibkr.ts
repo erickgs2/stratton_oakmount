@@ -39,6 +39,11 @@ export interface IBKROrder {
   timeInForce?: string;
 }
 
+function parseNumericField(value: string | undefined): number | null {
+  if (value == null || !/^-?\d+(\.\d+)?$/.test(value)) return null;
+  return parseFloat(value);
+}
+
 export class IBKRClient {
   private readonly baseUrl: string;
   private readonly agent: https.Agent;
@@ -133,6 +138,47 @@ export class IBKRClient {
       totalCashValue: raw['totalcashvalue']?.amount ?? 0,
       netLiquidation: raw['netliquidation']?.amount ?? 0,
     };
+  }
+
+  async getMarketDataSnapshot(conid: number): Promise<{ lastPrice: number; changePct: number; volume: number } | null> {
+    type SnapshotEntry = { conid: number; '31'?: string; '83'?: string; '87'?: string };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      const results = await this.request<SnapshotEntry[]>(
+        `/iserver/marketdata/snapshot?conids=${conid}&fields=31,83,87`
+      );
+      const entry = results?.[0];
+
+      const lastPrice = entry ? parseNumericField(entry['31']) : null;
+      const changePct = entry ? parseNumericField(entry['83']) : null;
+      const volume = entry ? parseNumericField(entry['87']) : null;
+
+      if (lastPrice != null && changePct != null && volume != null) {
+        return { lastPrice, changePct, volume };
+      }
+    }
+
+    return null;
+  }
+
+  async getMarketDataHistory(conid: number): Promise<{ date: string; close: number; volume: number }[]> {
+    type HistoryResponse = { data?: Array<{ t: number; c: number; v: number }> };
+
+    const result = await this.request<HistoryResponse>(
+      `/iserver/marketdata/history?conid=${conid}&period=60d&bar=1d`
+    );
+
+    return (result.data ?? [])
+      .map(bar => ({
+        date: new Date(bar.t).toISOString().split('T')[0],
+        close: bar.c,
+        volume: bar.v,
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 
   async searchConid(symbol: string, exchange: string): Promise<number | null> {
