@@ -17,7 +17,9 @@ services:
     build: ./frontend
     restart: unless-stopped
     ports:
-      - "5001:80"
+      # Loopback-only: nginx terminates TLS on the public 5001 port and
+      # reverse-proxies here, since the iOS Capacitor shell requires HTTPS.
+      - "127.0.0.1:5001:80"
     depends_on:
       - backend
 
