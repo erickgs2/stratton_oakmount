@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getMXMarketData } from '@/lib/databursatil';
+import { getUSAMarketData } from '@/lib/ibkr-market-data';
 import { ibkrClient } from '@/lib/ibkr';
 import { calculateIndicators } from '@/lib/indicators';
 import { isMarketOpen } from '@/lib/market-hours';
@@ -187,7 +188,12 @@ export async function runAgentCycle(
     closePrices = data.history.map(h => h.close);
     volumes     = data.history.map(h => h.volume);
   } else {
-    throw new Error('USA market data not yet implemented — set ACTIVE_MARKET=MX for Phase 1');
+    const data = await getUSAMarketData(symbol);
+    lastPrice   = data.lastPrice;
+    changePct   = data.changePct;
+    volume      = data.volume;
+    closePrices = data.history.map(h => h.close);
+    volumes     = data.history.map(h => h.volume);
   }
 
   const indicators = calculateIndicators(closePrices, volumes);

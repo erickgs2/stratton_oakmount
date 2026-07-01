@@ -249,4 +249,105 @@ describe('IBKRClient', () => {
       expect(opts.method).toBe('POST');
     });
   });
+
+  describe('getMarketDataSnapshot', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it('parses fields 31/83/87 from a complete response', async () => {
+      mockHttpsResponse(200, [{ conid: 265598, '31': '168.42', '83': '1.25', '87': '1300' }]);
+
+      const result = await client.getMarketDataSnapshot(265598);
+
+      expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
+    });
+
+    it('retries when the first response is incomplete, succeeds on a later attempt', async () => {
+      const mockReq = { on: jest.fn(), write: jest.fn(), end: jest.fn() };
+      let call = 0;
+      (https.request as jest.Mock).mockImplementation((_opts: unknown, callback: (res: unknown) => void) => {
+        call++;
+        const body = call === 1
+          ? [{ conid: 265598 }] // incomplete — fields not populated yet
+          : [{ conid: 265598, '31': '168.42', '83': '1.25', '87': '1300' }];
+        const res = {
+          statusCode: 200,
+          on: jest.fn((event: string, cb: (data?: string) => void) => {
+            if (event === 'data') cb(JSON.stringify(body));
+            if (event === 'end') cb();
+          }),
+        };
+        callback(res);
+        return mockReq;
+      });
+
+      const promise = client.getMarketDataSnapshot(265598);
+      await jest.advanceTimersByTimeAsync(500);
+      const result = await promise;
+
+      expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
+      expect(https.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('treats a prefixed last-price ("C168.42") or suffixed volume ("1.03M") as incomplete and retries rather than returning corrupted data', async () => {
+      const mockReq = { on: jest.fn(), write: jest.fn(), end: jest.fn() };
+      let call = 0;
+      (https.request as jest.Mock).mockImplementation((_opts: unknown, callback: (res: unknown) => void) => {
+        call++;
+        const body = call === 1
+          ? [{ conid: 265598, '31': 'C168.42', '83': '1.25', '87': '1.03M' }] // malformed — prefix/suffix
+          : [{ conid: 265598, '31': '168.42', '83': '1.25', '87': '1300' }];  // clean on retry
+        const res = {
+          statusCode: 200,
+          on: jest.fn((event: string, cb: (data?: string) => void) => {
+            if (event === 'data') cb(JSON.stringify(body));
+            if (event === 'end') cb();
+          }),
+        };
+        callback(res);
+        return mockReq;
+      });
+
+      const promise = client.getMarketDataSnapshot(265598);
+      await jest.advanceTimersByTimeAsync(500);
+      const result = await promise;
+
+      expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
+      expect(https.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('returns null after exhausting retries with still-incomplete data', async () => {
+      mockHttpsResponse(200, [{ conid: 265598 }]); // never completes
+
+      const promise = client.getMarketDataSnapshot(265598);
+      await jest.advanceTimersByTimeAsync(1500); // covers all retry delays
+      const result = await promise;
+
+      expect(result).toBeNull();
+      expect(https.request).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('getMarketDataHistory', () => {
+    it('maps the data array to { date, close, volume }, sorted ascending', async () => {
+      mockHttpsResponse(200, {
+        data: [
+          { t: 1719792000000, o: 10, h: 11, l: 9, c: 10.5, v: 500000 }, // 2024-07-01
+          { t: 1719705600000, o: 9, h: 10, l: 8, c: 9.5, v: 400000 },   // 2024-06-30
+        ],
+      });
+
+      const history = await client.getMarketDataHistory(265598);
+
+      expect(history).toEqual([
+        { date: '2024-06-30', close: 9.5, volume: 400000 },
+        { date: '2024-07-01', close: 10.5, volume: 500000 },
+      ]);
+    });
+  });
 });

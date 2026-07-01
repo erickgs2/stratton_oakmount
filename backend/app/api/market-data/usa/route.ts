@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getUSAMarketData } from '@/lib/ibkr-market-data';
 
-export const dynamic = 'force-dynamic';
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const symbol = searchParams.get('symbol');
 
-export async function GET() {
-  return NextResponse.json(
-    { error: 'USA market data (Phase 2) not yet implemented' },
-    { status: 501 }
-  );
+  if (!symbol) {
+    return NextResponse.json({ error: 'symbol query param is required' }, { status: 400 });
+  }
+
+  try {
+    const data = await getUSAMarketData(symbol);
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: (error as Error).message }, { status: 500 });
+  }
 }
