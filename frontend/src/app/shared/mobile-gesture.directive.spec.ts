@@ -25,10 +25,15 @@ function touch(target: EventTarget, x: number, y: number): Touch {
   return new Touch({ identifier: 0, target, clientX: x, clientY: y });
 }
 
-function dispatchTouch(el: HTMLElement, type: 'touchstart' | 'touchmove' | 'touchend', x: number, y: number): void {
+function dispatchTouch(
+  el: HTMLElement,
+  type: 'touchstart' | 'touchmove' | 'touchend' | 'touchcancel',
+  x: number,
+  y: number,
+): void {
   const t = touch(el, x, y);
   const event = new TouchEvent(type, {
-    touches: type === 'touchend' ? [] : [t],
+    touches: type === 'touchend' || type === 'touchcancel' ? [] : [t],
     changedTouches: [t],
     cancelable: true,
     bubbles: true,
@@ -79,5 +84,15 @@ describe('MobileGestureDirective', () => {
 
     expect(fixture.componentInstance.swipeOpenCount).toBe(0);
     expect(fixture.componentInstance.refreshCount).toBe(0);
+  });
+
+  it('resets pull state and does not emit refresh/swipeOpen when the touch is cancelled mid-pull', () => {
+    dispatchTouch(el, 'touchstart', 100, 50);
+    dispatchTouch(el, 'touchmove', 100, 150);
+    dispatchTouch(el, 'touchcancel', 100, 150);
+
+    expect(fixture.componentInstance.pullValues).toContain(0);
+    expect(fixture.componentInstance.refreshCount).toBe(0);
+    expect(fixture.componentInstance.swipeOpenCount).toBe(0);
   });
 });

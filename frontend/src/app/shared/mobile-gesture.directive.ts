@@ -29,6 +29,7 @@ export class MobileGestureDirective implements OnInit, OnDestroy {
     host.addEventListener('touchstart', this.onTouchStart, { passive: true });
     host.addEventListener('touchmove', this.onTouchMove, { passive: false });
     host.addEventListener('touchend', this.onTouchEnd, { passive: true });
+    host.addEventListener('touchcancel', this.onTouchCancel, { passive: true });
   }
 
   ngOnDestroy(): void {
@@ -36,6 +37,7 @@ export class MobileGestureDirective implements OnInit, OnDestroy {
     host.removeEventListener('touchstart', this.onTouchStart);
     host.removeEventListener('touchmove', this.onTouchMove);
     host.removeEventListener('touchend', this.onTouchEnd);
+    host.removeEventListener('touchcancel', this.onTouchCancel);
   }
 
   private readonly onTouchStart = (e: TouchEvent): void => {
@@ -91,6 +93,14 @@ export class MobileGestureDirective implements OnInit, OnDestroy {
       if (dx >= SWIPE_THRESHOLD_PX) {
         this.swipeOpen.emit();
       }
+    }
+
+    this.mode = 'idle';
+  };
+
+  private readonly onTouchCancel = (): void => {
+    if (this.mode === 'pull') {
+      this.pullChange.emit(0);
     }
 
     this.mode = 'idle';
