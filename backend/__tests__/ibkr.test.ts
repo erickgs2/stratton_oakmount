@@ -294,6 +294,33 @@ describe('IBKRClient', () => {
       expect(https.request).toHaveBeenCalledTimes(2);
     });
 
+    it('treats a prefixed last-price ("C168.42") or suffixed volume ("1.03M") as incomplete and retries rather than returning corrupted data', async () => {
+      const mockReq = { on: jest.fn(), write: jest.fn(), end: jest.fn() };
+      let call = 0;
+      (https.request as jest.Mock).mockImplementation((_opts: unknown, callback: (res: unknown) => void) => {
+        call++;
+        const body = call === 1
+          ? [{ conid: 265598, '31': 'C168.42', '83': '1.25', '87': '1.03M' }] // malformed — prefix/suffix
+          : [{ conid: 265598, '31': '168.42', '83': '1.25', '87': '1300' }];  // clean on retry
+        const res = {
+          statusCode: 200,
+          on: jest.fn((event: string, cb: (data?: string) => void) => {
+            if (event === 'data') cb(JSON.stringify(body));
+            if (event === 'end') cb();
+          }),
+        };
+        callback(res);
+        return mockReq;
+      });
+
+      const promise = client.getMarketDataSnapshot(265598);
+      await jest.advanceTimersByTimeAsync(500);
+      const result = await promise;
+
+      expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
+      expect(https.request).toHaveBeenCalledTimes(2);
+    });
+
     it('returns null after exhausting retries with still-incomplete data', async () => {
       mockHttpsResponse(200, [{ conid: 265598 }]); // never completes
 

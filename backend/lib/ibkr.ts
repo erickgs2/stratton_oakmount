@@ -39,6 +39,11 @@ export interface IBKROrder {
   timeInForce?: string;
 }
 
+function parseNumericField(value: string | undefined): number | null {
+  if (value == null || !/^-?\d+(\.\d+)?$/.test(value)) return null;
+  return parseFloat(value);
+}
+
 export class IBKRClient {
   private readonly baseUrl: string;
   private readonly agent: https.Agent;
@@ -148,12 +153,12 @@ export class IBKRClient {
       );
       const entry = results?.[0];
 
-      if (entry && entry['31'] != null && entry['83'] != null && entry['87'] != null) {
-        return {
-          lastPrice: parseFloat(entry['31']),
-          changePct: parseFloat(entry['83']),
-          volume: parseFloat(entry['87']),
-        };
+      const lastPrice = entry ? parseNumericField(entry['31']) : null;
+      const changePct = entry ? parseNumericField(entry['83']) : null;
+      const volume = entry ? parseNumericField(entry['87']) : null;
+
+      if (lastPrice != null && changePct != null && volume != null) {
+        return { lastPrice, changePct, volume };
       }
     }
 
