@@ -20,6 +20,20 @@
   margin-bottom: 8px;
 }
 
+@media (max-width: 768px) {
+.sidenav-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  // padding-top is set globally in styles.scss (safe-area aware) — the
+  // sidenav is a full-height overlay panel on mobile, so its header needs
+  // the same status-bar clearance as .app-toolbar.
+  padding: 45px 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+}
+
 // Slightly bigger than .brand-name's 14px font, sized as an image (not a
 // mat-icon glyph) — object-fit preserves the icon's aspect ratio, and
 // display: block avoids the few px of baseline gap <img> normally leaves
