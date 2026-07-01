@@ -32,15 +32,19 @@ body {
   color: var(--text-primary);
 }
 
-// iOS safe area — notch / Dynamic Island / home indicator
+// iOS safe area — notch / Dynamic Island / home indicator.
+// max(..., 20px) guards against env(safe-area-inset-top) reporting 0 in
+// contexts where it's unreliable (e.g. mobile Safari with chrome
+// auto-hidden, rather than a true standalone/native container); the
+// extra 12px gives breathing room instead of a flush edge-to-edge fit.
 html {
-  --sat: env(safe-area-inset-top);
+  --sat: max(env(safe-area-inset-top), 20px);
   --sab: env(safe-area-inset-bottom);
 }
 
 .app-toolbar {
-  padding-top: var(--sat);
-  height: calc(56px + var(--sat)) !important;
+  padding-top: calc(var(--sat) + 12px);
+  height: calc(56px + var(--sat) + 12px) !important;
 }
 
 body {
