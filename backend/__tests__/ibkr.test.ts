@@ -7,6 +7,16 @@ jest.mock('https', () => ({
   request: jest.fn(),
 }));
 
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    appSettings: {
+      findUnique: jest.fn(),
+    },
+  },
+}));
+
+import { prisma } from '@/lib/prisma';
+
 function mockHttpsResponse(statusCode: number, body: unknown) {
   const mockResponse = {
     statusCode,
@@ -35,6 +45,7 @@ describe('IBKRClient', () => {
     process.env.IBKR_ACCOUNT_ID = 'TEST123';
     client = new IBKRClient();
     jest.clearAllMocks();
+    (prisma.appSettings.findUnique as jest.Mock).mockResolvedValue(null);
   });
 
   describe('getPositions', () => {
@@ -177,6 +188,66 @@ describe('IBKRClient', () => {
       jest.advanceTimersByTime(5_000);
       const result = await promise;
       expect(result).toBe(false);
+    });
+  });
+
+  describe('resolveAccountId (via getPositions)', () => {
+    it('uses the DB-configured account id when a settings row exists', async () => {
+      (prisma.appSettings.findUnique as jest.Mock).mockResolvedValue({
+        id: 'singleton',
+        ibkrAccountId: 'U9999999',
+      });
+      const mockReq = mockHttpsResponse(200, []);
+
+      await client.getPositions();
+
+      const [opts] = (https.request as jest.Mock).mock.calls[0];
+      expect(opts.path).toBe('/v1/api/portfolio/U9999999/positions/0');
+      void mockReq;
+    });
+
+    it('falls back to the env var when no settings row exists', async () => {
+      mockHttpsResponse(200, []);
+
+      await client.getPositions();
+
+      const [opts] = (https.request as jest.Mock).mock.calls[0];
+      expect(opts.path).toBe('/v1/api/portfolio/TEST123/positions/0');
+    });
+
+    it('only queries Prisma once across multiple calls (cached)', async () => {
+      mockHttpsResponse(200, []);
+
+      await client.getPositions();
+      await client.getPositions();
+
+      expect(prisma.appSettings.findUnique).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('setAccountId', () => {
+    it('updates the cached account id without another Prisma call', async () => {
+      mockHttpsResponse(200, []);
+      await client.getPositions(); // primes the cache from the env fallback
+
+      client.setAccountId('U8888888');
+      await client.getPositions();
+
+      const [opts] = (https.request as jest.Mock).mock.calls[1];
+      expect(opts.path).toBe('/v1/api/portfolio/U8888888/positions/0');
+      expect(prisma.appSettings.findUnique).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('logout', () => {
+    it('issues a POST to /logout', async () => {
+      mockHttpsResponse(200, { status: 'success' });
+
+      await client.logout();
+
+      const [opts] = (https.request as jest.Mock).mock.calls[0];
+      expect(opts.path).toBe('/v1/api/logout');
+      expect(opts.method).toBe('POST');
     });
   });
 });
