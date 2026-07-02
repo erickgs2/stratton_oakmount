@@ -43,23 +43,6 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
     this.actionFilter = f;
   }
 
-  inputToggles: Record<string, boolean> = {
-    lastPrice: true,
-    changePct: true,
-    volume: true,
-    rsi14: true,
-    ma20: true,
-    ma50: true,
-    percentChange5d: true,
-    volumeRatio: true,
-  };
-
-  claudeToggles: Record<string, boolean> = {
-    quantity: true,
-    confidence: true,
-    reason: true,
-  };
-
   inputFieldLabels: Record<string, string> = {
     lastPrice: 'Last Price',
     changePct: 'Day Change %',
@@ -71,14 +54,7 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
     volumeRatio: 'Volume Ratio',
   };
 
-  claudeFieldLabels: Record<string, string> = {
-    quantity: 'Quantity',
-    confidence: 'Confidence',
-    reason: 'Reason',
-  };
-
-  readonly inputKeys = Object.keys(this.inputToggles);
-  readonly claudeKeys = Object.keys(this.claudeToggles);
+  readonly inputKeys = Object.keys(this.inputFieldLabels);
 
   private pollSub: Subscription | null = null;
 
@@ -117,14 +93,6 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
         error: () => { this.loading = false; },
       });
     }
-  }
-
-  toggleInput(key: string): void {
-    this.inputToggles[key] = !this.inputToggles[key];
-  }
-
-  toggleClaude(key: string): void {
-    this.claudeToggles[key] = !this.claudeToggles[key];
   }
 
   getFieldValue(log: AgentLog, key: string): string {

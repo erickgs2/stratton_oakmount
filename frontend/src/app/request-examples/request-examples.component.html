@@ -1,0 +1,37 @@
+<mat-expansion-panel class="request-examples-panel" (opened)="onExpand()">
+  <mat-expansion-panel-header>
+    <mat-panel-title>Requests example</mat-panel-title>
+    <mat-panel-description>See exactly what's sent to Claude on a real cycle</mat-panel-description>
+  </mat-expansion-panel-header>
+
+  <div *ngIf="loading" class="loading-row">
+    <mat-progress-spinner mode="indeterminate" diameter="28"></mat-progress-spinner>
+    <span>Building a live example from current market data…</span>
+  </div>
+
+  <div *ngIf="loaded" class="slots">
+    <div *ngFor="let slot of slots" class="slot">
+      <h4 class="slot-title">
+        {{ slot.label }}
+        <span *ngIf="slot.preview" class="slot-symbol">— {{ slot.preview.symbol }}</span>
+      </h4>
+
+      <p *ngIf="slot.error" class="slot-error">{{ slot.error }}</p>
+
+      <div *ngIf="slot.preview as preview" class="two-column">
+        <div class="readable-column">
+          <div class="column-header">What's being asked</div>
+          <div *ngFor="let row of readableRows(preview)" class="readable-row">
+            <span class="readable-label">{{ row.label }}</span>
+            <span class="readable-value">{{ row.value }}</span>
+          </div>
+        </div>
+
+        <div class="json-column">
+          <div class="column-header">Raw request body</div>
+          <pre class="json-block">{{ requestJson(preview) }}</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-expansion-panel>

@@ -10,28 +10,6 @@
         <mat-chip [class.active]="actionFilter === 'hold'" (click)="setActionFilter('hold')">Hold</mat-chip>
       </mat-chip-set>
     </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Input fields:</span>
-      <mat-chip-set>
-        <mat-chip
-          *ngFor="let key of inputKeys"
-          [class.active]="inputToggles[key]"
-          (click)="toggleInput(key)">
-          {{ inputFieldLabels[key] }}
-        </mat-chip>
-      </mat-chip-set>
-    </div>
-    <div class="toggle-row">
-      <span class="toggle-label">Claude fields:</span>
-      <mat-chip-set>
-        <mat-chip
-          *ngFor="let key of claudeKeys"
-          [class.active]="claudeToggles[key]"
-          (click)="toggleClaude(key)">
-          {{ claudeFieldLabels[key] }}
-        </mat-chip>
-      </mat-chip-set>
-    </div>
   </div>
 
   <div *ngIf="loading" class="loading-container">
@@ -58,25 +36,23 @@
     <div *ngIf="isExpanded(log.id)" class="log-body">
       <div class="input-bubble">
         <div class="bubble-header">Input</div>
-        <div *ngFor="let key of inputKeys">
-          <div *ngIf="inputToggles[key]" class="field-row">
-            <span class="field-label">{{ inputFieldLabels[key] }}</span>
-            <span class="field-value">{{ getFieldValue(log, key) }}</span>
-          </div>
+        <div *ngFor="let key of inputKeys" class="field-row">
+          <span class="field-label">{{ inputFieldLabels[key] }}</span>
+          <span class="field-value">{{ getFieldValue(log, key) }}</span>
         </div>
       </div>
 
       <div class="claude-bubble">
         <div class="bubble-header">Claude</div>
-        <div *ngIf="claudeToggles['quantity']" class="field-row">
+        <div class="field-row">
           <span class="field-label">Quantity</span>
           <span class="field-value">{{ log.response.quantity }}</span>
         </div>
-        <div *ngIf="claudeToggles['confidence']" class="field-row">
+        <div class="field-row">
           <span class="field-label">Confidence</span>
           <span class="field-value">{{ log.response.confidence | number:'1.2-2' }}</span>
         </div>
-        <div *ngIf="claudeToggles['reason']" class="field-row reason-row">
+        <div class="field-row reason-row">
           <span class="field-label">Reason</span>
           <span class="field-value reason-text">{{ log.response.reason }}</span>
         </div>
