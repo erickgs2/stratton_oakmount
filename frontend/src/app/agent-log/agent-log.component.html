@@ -21,43 +21,62 @@
     <p>No agent cycles recorded yet. Start the bot to see Claude's decisions here.</p>
   </div>
 
-  <div *ngFor="let log of filteredLogs" class="log-entry">
-    <div class="log-header" (click)="toggleExpand(log.id)">
-      <span class="symbol-chip">{{ log.symbol }}</span>
-      <span class="market-badge">{{ log.market }}</span>
-      <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
-      <span [class]="getActionClass(log.response.action)" class="action-badge">
-        {{ log.response.action | uppercase }}
-      </span>
-      <span *ngIf="log.executed" class="executed-badge">EXECUTED</span>
-      <mat-icon class="expand-icon">{{ isExpanded(log.id) ? 'expand_less' : 'expand_more' }}</mat-icon>
-    </div>
+  <div *ngIf="!loading && filteredLogs.length > 0" class="master-detail">
 
-    <div *ngIf="isExpanded(log.id)" class="log-body">
-      <div class="input-bubble">
-        <div class="bubble-header">Input</div>
-        <div *ngFor="let key of inputKeys" class="field-row">
-          <span class="field-label">{{ inputFieldLabels[key] }}</span>
-          <span class="field-value">{{ getFieldValue(log, key) }}</span>
-        </div>
-      </div>
-
-      <div class="claude-bubble">
-        <div class="bubble-header">Claude</div>
-        <div class="field-row">
-          <span class="field-label">Quantity</span>
-          <span class="field-value">{{ log.response.quantity }}</span>
-        </div>
-        <div class="field-row">
-          <span class="field-label">Confidence</span>
-          <span class="field-value">{{ log.response.confidence | number:'1.2-2' }}</span>
-        </div>
-        <div class="field-row reason-row">
-          <span class="field-label">Reason</span>
-          <span class="field-value reason-text">{{ log.response.reason }}</span>
-        </div>
+    <div class="log-list" *ngIf="!isMobile || !mobileDetailMode">
+      <div *ngFor="let log of filteredLogs"
+           class="log-row-compact"
+           [class.selected]="selectedLog?.id === log.id"
+           (click)="selectLog(log.id)">
+        <span class="symbol-chip">{{ log.symbol }}</span>
+        <span class="market-badge">{{ log.market }}</span>
+        <span class="timestamp tabular-nums">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
+        <span [class]="getActionClass(log.response.action)" class="action-badge">{{ log.response.action | uppercase }}</span>
+        <span *ngIf="log.executed" class="executed-badge">EXECUTED</span>
       </div>
     </div>
+
+    <div class="log-detail" *ngIf="(!isMobile || mobileDetailMode) && selectedLog as log">
+      <button mat-button class="detail-back" *ngIf="isMobile && mobileDetailMode" (click)="closeMobileDetail()">
+        <mat-icon>arrow_back</mat-icon>
+        <span>Back</span>
+      </button>
+
+      <div class="detail-title">
+        <span class="symbol-chip">{{ log.symbol }}</span>
+        <span class="market-badge">{{ log.market }}</span>
+        <span [class]="getActionClass(log.response.action)" class="action-badge">{{ log.response.action | uppercase }}</span>
+        <span *ngIf="log.executed" class="executed-badge">EXECUTED</span>
+      </div>
+      <div class="detail-timestamp tabular-nums">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</div>
+
+      <div class="log-body">
+        <div class="input-bubble">
+          <div class="bubble-header">Input</div>
+          <div *ngFor="let key of inputKeys" class="field-row">
+            <span class="field-label">{{ inputFieldLabels[key] }}</span>
+            <span class="field-value tabular-nums">{{ getFieldValue(log, key) }}</span>
+          </div>
+        </div>
+
+        <div class="claude-bubble">
+          <div class="bubble-header">Claude</div>
+          <div class="field-row">
+            <span class="field-label">Quantity</span>
+            <span class="field-value tabular-nums">{{ log.response.quantity }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Confidence</span>
+            <span class="field-value tabular-nums">{{ log.response.confidence | number:'1.2-2' }}</span>
+          </div>
+          <div class="field-row reason-row">
+            <span class="field-label">Reason</span>
+            <span class="field-value reason-text">{{ log.response.reason }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
 </div>
