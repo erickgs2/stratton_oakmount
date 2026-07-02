@@ -2,8 +2,16 @@
   padding: 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   max-width: 1100px;
+}
+
+.config-card {
+  padding: 16px;
+
+  h3 {
+    margin-top: 0;
+  }
 }
 
 // 3 columns on wide screens, collapsing down as space runs out, single
@@ -16,11 +24,7 @@
   align-items: start;
 }
 
-.field-block.full-width {
-  grid-column: 1 / -1;
-}
-
-.footer-row {
+.status-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,7 +86,7 @@ mat-form-field {
     padding-top: 0;
   }
 
-  .footer-row {
+  .status-card {
     flex-direction: column;
     align-items: stretch;
 
