@@ -2,22 +2,30 @@
   padding: 24px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 560px;
+  gap: 24px;
+  max-width: 1100px;
 }
 
-.toggle-row {
+// 3 columns on wide screens, collapsing down as space runs out, single
+// column on mobile — replaces the old fixed 560px column that left most
+// of a normal-width screen empty.
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  align-items: start;
+}
+
+.field-block.full-width {
+  grid-column: 1 / -1;
+}
+
+.footer-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-
-.phase2-banner {
-  background: rgba(245, 158, 11, 0.08);
-  border-left: 3px solid var(--accent);
-  border-radius: 4px;
-  padding: 12px 16px;
-  color: var(--accent);
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 mat-form-field {
@@ -33,14 +41,53 @@ mat-form-field {
 .ibkr-account-card {
   margin-bottom: 24px;
   padding: 16px;
+  max-width: 1100px;
+}
 
-  mat-form-field {
-    display: block;
-    max-width: 320px;
-  }
+.ibkr-account-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.account-id-field {
+  flex: 1 1 320px;
+  max-width: 400px;
 }
 
 .ibkr-account-actions {
   display: flex;
   gap: 12px;
+  padding-top: 8px; // aligns with the input's baseline, not its floating label
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .ibkr-account-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .account-id-field {
+    // flex: 1 1 320px sets *width* in the row layout above, but once the
+    // container switches to flex-direction: column here, the same
+    // shorthand sets *height* instead (flex-basis follows the main
+    // axis) — grow: 1 then stretches the field to fill the container's
+    // vertical space. Reset to normal block sizing for the column layout.
+    flex: none;
+    max-width: none;
+  }
+
+  .ibkr-account-actions {
+    padding-top: 0;
+  }
+
+  .footer-row {
+    flex-direction: column;
+    align-items: stretch;
+
+    button {
+      width: 100%;
+    }
+  }
 }

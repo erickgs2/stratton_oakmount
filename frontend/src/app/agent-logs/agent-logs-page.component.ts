@@ -5,11 +5,12 @@ import { Subscription, interval, of } from 'rxjs';
 import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotService } from '../core/services/bot.service';
 import { AgentLogComponent } from '../agent-log/agent-log.component';
+import { RequestExamplesComponent } from '../request-examples/request-examples.component';
 
 @Component({
   selector: 'app-agent-logs-page',
   standalone: true,
-  imports: [CommonModule, MatChipsModule, AgentLogComponent],
+  imports: [CommonModule, MatChipsModule, AgentLogComponent, RequestExamplesComponent],
   templateUrl: './agent-logs-page.component.html',
   styleUrls: ['./agent-logs-page.component.scss'],
 })

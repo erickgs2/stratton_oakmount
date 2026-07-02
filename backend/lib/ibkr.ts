@@ -39,8 +39,13 @@ export interface IBKROrder {
   timeInForce?: string;
 }
 
-function parseNumericField(value: string | undefined): number | null {
-  if (value == null || !/^-?\d+(\.\d+)?$/.test(value)) return null;
+// IBKR's snapshot fields are inconsistently typed at runtime (some come
+// back as JSON strings, e.g. "31": "304.78", others as raw JSON numbers,
+// e.g. "83": 3.53) despite a single declared type — handle both.
+function parseNumericField(value: string | number | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+  if (!/^-?\d+(\.\d+)?$/.test(value)) return null;
   return parseFloat(value);
 }
 
@@ -141,7 +146,16 @@ export class IBKRClient {
   }
 
   async getMarketDataSnapshot(conid: number): Promise<{ lastPrice: number; changePct: number; volume: number } | null> {
-    type SnapshotEntry = { conid: number; '31'?: string; '83'?: string; '87'?: string };
+    type SnapshotEntry = {
+      conid: number;
+      '31'?: string | number;
+      '83'?: string | number;
+      '87'?: string | number;
+      // Volume is commonly returned human-formatted (e.g. "13.9M") in the
+      // "87" field itself — IBKR provides this companion field with the
+      // same value as a plain number specifically for machine consumption.
+      '87_raw'?: number;
+    };
 
     for (let attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
@@ -155,7 +169,7 @@ export class IBKRClient {
 
       const lastPrice = entry ? parseNumericField(entry['31']) : null;
       const changePct = entry ? parseNumericField(entry['83']) : null;
-      const volume = entry ? parseNumericField(entry['87']) : null;
+      const volume = entry ? (parseNumericField(entry['87_raw']) ?? parseNumericField(entry['87'])) : null;
 
       if (lastPrice != null && changePct != null && volume != null) {
         return { lastPrice, changePct, volume };

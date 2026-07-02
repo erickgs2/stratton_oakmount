@@ -6,5 +6,6 @@
       <mat-chip [class.active]="activeMarket === 'USA'" (click)="setMarket('USA')">USA — NYSE/Nasdaq</mat-chip>
     </mat-chip-set>
   </div>
+  <app-request-examples></app-request-examples>
   <app-agent-log [market]="activeMarket" [isRunning]="isRunning"></app-agent-log>
 </div>

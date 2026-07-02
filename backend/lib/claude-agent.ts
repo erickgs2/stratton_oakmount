@@ -162,18 +162,38 @@ ${tradingContext}
 Respond with JSON only: {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`;
 }
 
-export async function runAgentCycle(
+interface ClaudeRequestBody {
+  model: string;
+  max_tokens: number;
+  system: string;
+  messages: { role: 'user'; content: string }[];
+}
+
+interface AgentRequestContext {
+  request: ClaudeRequestBody;
+  lastPrice: number;
+  changePct: number;
+  volume: number;
+  indicators: ReturnType<typeof calculateIndicators>;
+  currentPosition: number;
+  currentAvgCost: number;
+  availableFunds: number;
+  effectiveCapital: number;
+  netLiquidation: number;
+  totalUnrealizedPnl: number;
+  positions: Awaited<ReturnType<typeof ibkrClient.getPositions>>;
+}
+
+// Shared by runAgentCycle (which sends this to Claude and acts on the
+// response) and previewAgentRequest (which returns it as-is, read-only,
+// for the "Requests example" panel — neither calls Claude nor touches the
+// database/broker beyond the same read-only calls runAgentCycle makes).
+async function buildAgentRequestContext(
   symbol: string,
   market: 'MX' | 'USA',
-  capitalLimit?: number,
-  confidenceThreshold = 0.65,
-  intervalMin = 15,
-): Promise<AgentCycleResult> {
-  if (!isMarketOpen(market)) {
-    return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
-  }
-
-  // Fetch market data
+  capitalLimit: number | undefined,
+  intervalMin: number,
+): Promise<AgentRequestContext> {
   let lastPrice: number;
   let changePct: number;
   let volume: number;
@@ -198,7 +218,6 @@ export async function runAgentCycle(
 
   const indicators = calculateIndicators(closePrices, volumes);
 
-  // Fetch portfolio state
   const [positions, summary] = await Promise.all([
     ibkrClient.getPositions(),
     ibkrClient.getAccountSummary(),
@@ -213,8 +232,7 @@ export async function runAgentCycle(
 
   const tradingContext = await buildContextSection(positions, summary.netLiquidation);
 
-  // Call Claude
-  const message = await anthropic.messages.create({
+  const request: ClaudeRequestBody = {
     model: 'claude-sonnet-4-6',
     max_tokens: 400,
     system: SYSTEM_PROMPTS[market],
@@ -231,7 +249,99 @@ export async function runAgentCycle(
         ),
       },
     ],
-  });
+  };
+
+  return {
+    request, lastPrice, changePct, volume, indicators,
+    currentPosition, currentAvgCost, availableFunds, effectiveCapital,
+    netLiquidation: summary.netLiquidation, totalUnrealizedPnl, positions,
+  };
+}
+
+export interface AgentRequestPreview {
+  symbol: string;
+  market: 'MX' | 'USA';
+  readable: {
+    lastPrice: number;
+    changePct: number;
+    volume: number;
+    currency: string;
+    rsi14: number;
+    ma20: number;
+    ma50: number;
+    percentChange5d: number;
+    volumeRatio: number;
+    capitalLimit: number | null;
+    intervalMin: number;
+    availableFunds: number;
+    effectiveCapital: number;
+    netLiquidation: number;
+    totalUnrealizedPnl: number;
+    currentPosition: number;
+    currentAvgCost: number;
+  };
+  request: ClaudeRequestBody;
+}
+
+// Read-only: builds the exact request runAgentCycle would send to Claude
+// right now for one of this market's configured symbols, without ever
+// calling Claude, placing an order, or writing a log/trade record.
+export async function previewAgentRequest(market: 'MX' | 'USA'): Promise<AgentRequestPreview> {
+  const config = await prisma.botConfig.findUnique({ where: { market } });
+  const symbol = config?.symbols?.[0];
+  if (!symbol) {
+    throw new Error(`No symbols configured for ${market} — add at least one symbol in Bot Config first`);
+  }
+
+  const capitalLimit = config?.capitalLimit ?? undefined;
+  const intervalMin  = config?.intervalMin ?? 15;
+  const ctx = await buildAgentRequestContext(symbol, market, capitalLimit, intervalMin);
+
+  return {
+    symbol,
+    market,
+    readable: {
+      lastPrice: ctx.lastPrice,
+      changePct: ctx.changePct,
+      volume: ctx.volume,
+      currency: market === 'MX' ? 'MXN' : 'USD',
+      rsi14: ctx.indicators.rsi14,
+      ma20: ctx.indicators.ma20,
+      ma50: ctx.indicators.ma50,
+      percentChange5d: ctx.indicators.percentChange5d,
+      volumeRatio: ctx.indicators.volumeRatio,
+      capitalLimit: capitalLimit ?? null,
+      intervalMin,
+      availableFunds: ctx.availableFunds,
+      effectiveCapital: ctx.effectiveCapital,
+      netLiquidation: ctx.netLiquidation,
+      totalUnrealizedPnl: ctx.totalUnrealizedPnl,
+      currentPosition: ctx.currentPosition,
+      currentAvgCost: ctx.currentAvgCost,
+    },
+    request: ctx.request,
+  };
+}
+
+export async function runAgentCycle(
+  symbol: string,
+  market: 'MX' | 'USA',
+  capitalLimit?: number,
+  confidenceThreshold = 0.65,
+  intervalMin = 15,
+): Promise<AgentCycleResult> {
+  if (!isMarketOpen(market)) {
+    return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
+  }
+
+  const ctx = await buildAgentRequestContext(symbol, market, capitalLimit, intervalMin);
+  const {
+    lastPrice, changePct, volume, indicators,
+    currentPosition, currentAvgCost, availableFunds, effectiveCapital,
+    netLiquidation, totalUnrealizedPnl, positions,
+  } = ctx;
+
+  const message = await anthropic.messages.create(ctx.request);
 
   const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
   const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
