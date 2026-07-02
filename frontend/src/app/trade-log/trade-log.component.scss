@@ -6,13 +6,6 @@
   flex-wrap: wrap;
 }
 
-.table-scroll {
-  overflow-x: auto;
-  width: 100%;
-}
-
-.full-width { width: 100%; }
-
 .action-chip {
   padding: 4px 10px;
   border-radius: 12px;
@@ -24,122 +17,173 @@
 .action-sell { background: rgba(239, 68, 68, 0.15);   color: var(--red); }
 .action-hold { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
 
-.trade-row {
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: var(--text-muted);
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+  }
+
+  p {
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+  }
+}
+
+.master-detail {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+
+  @media (max-width: 768px) {
+    display: block;
+  }
+}
+
+.trade-list {
+  flex: 0 0 38%;
+  min-width: 280px;
+  max-height: 72vh;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+
+  @media (max-width: 768px) {
+    max-height: none;
+    width: 100%;
+  }
+}
+
+.trade-row-compact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
   cursor: pointer;
+  user-select: none;
 
   &:hover {
     background: rgba(255, 255, 255, 0.03);
   }
-}
 
-// Collapsed by default: single-line, truncated with an ellipsis, so a long
-// reason doesn't blow up every row's height. Expanding a row wraps its own
-// reason cell in place — the rest of the row stays a normal table row.
-.reason-cell {
-  max-width: 320px;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-
-  .reason-text {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  &.selected {
+    background: rgba(245, 158, 11, 0.1);
+    border-left: 3px solid var(--accent);
+    padding-left: 11px;
   }
 
-  .expand-icon {
-    flex-shrink: 0;
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: var(--text-muted);
-  }
-
-  &.expanded {
-    white-space: normal;
-
-    .reason-text {
-      overflow: visible;
-      text-overflow: unset;
-      white-space: normal;
-      word-break: break-word;
-    }
+  &:last-child {
+    border-bottom: none;
   }
 }
 
-.trade-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.trade-card {
-  background: var(--bg-surface);
+.trade-detail {
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px 14px;
+  overflow: hidden;
 }
 
-.trade-card-header {
+.detail-back {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 14px;
+  gap: 4px;
+  width: 100%;
+  justify-content: flex-start;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--accent) !important;
+  font-size: 13px;
+  font-weight: 600;
 }
 
-.trade-card-row {
+.detail-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 4px;
+  flex-wrap: wrap;
+}
+
+.detail-timestamp {
+  padding: 0 14px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.detail-body {
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+
+.date {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 130px;
+}
+
+.symbol {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.market-badge {
+  font-size: 11px;
+  background: var(--bg-base);
+  color: var(--text-muted);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.field-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 3px 0;
   font-size: 13px;
-
-  .label {
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-
-  .value {
-    text-align: right;
-    color: var(--text-primary);
-  }
 }
 
-// Collapsed by default: reason text clamps to 2 lines, tap the row to expand
-// to full text — same collapsed-by-default behavior as the desktop table.
 .reason-row {
-  align-items: stretch;
+  align-items: flex-start;
   flex-direction: column;
   gap: 4px;
-  cursor: pointer;
+}
 
-  .reason-row-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.field-label {
+  color: var(--text-muted);
+  min-width: 90px;
+  flex-shrink: 0;
+}
 
-  .expand-icon {
-    font-size: 18px;
-    width: 18px;
-    height: 18px;
-    color: var(--text-muted);
-  }
+.field-value {
+  color: var(--text-primary);
+  text-align: right;
+}
 
-  .value {
-    text-align: left;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  &.expanded .value {
-    -webkit-line-clamp: unset;
-    overflow: visible;
-  }
+.reason-text {
+  text-align: left;
+  line-height: 1.4;
+  color: var(--text-primary);
 }
 
 .trades-footer {

@@ -3,13 +3,12 @@ import { Subscription } from 'rxjs';
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TradeService, TradeFilters } from '../core/services/trade.service';
 import { Trade } from '../core/models/trade.model';
 
@@ -18,8 +17,8 @@ import { Trade } from '../core/models/trade.model';
   standalone: true,
   imports: [
     CommonModule, FormsModule,
-    MatTableModule, MatSelectModule, MatFormFieldModule,
-    MatInputModule, MatButtonModule, MatIconModule, MatChipsModule,
+    MatSelectModule, MatFormFieldModule,
+    MatInputModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
   ],
   templateUrl: './trade-log.component.html',
   styleUrls: ['./trade-log.component.scss'],
@@ -28,12 +27,12 @@ export class TradeLogComponent implements OnInit, OnDestroy {
   trades: Trade[] = [];
   loading = false;
   isMobile = false;
-  displayedColumns = ['createdAt', 'symbol', 'market', 'action', 'quantity', 'price', 'currency', 'reason'];
+  mobileDetailMode = false;
 
   marketFilter: 'MX' | 'USA' | '' = '';
   symbolFilter = '';
 
-  private expandedTradeIds = new Set<string>();
+  private selectedTradeId: string | null = null;
   private breakpointSub: Subscription | null = null;
 
   constructor(
@@ -45,6 +44,19 @@ export class TradeLogComponent implements OnInit, OnDestroy {
     const n = this.trades.length;
     if (n === 0) return 'No trades yet';
     return `That's everything so far — ${n} trade${n === 1 ? '' : 's'} executed`;
+  }
+
+  get selectedTrade(): Trade | null {
+    return this.trades.find(t => t.id === this.selectedTradeId) ?? this.trades[0] ?? null;
+  }
+
+  selectTrade(id: string): void {
+    this.selectedTradeId = id;
+    if (this.isMobile) this.mobileDetailMode = true;
+  }
+
+  closeMobileDetail(): void {
+    this.mobileDetailMode = false;
   }
 
   ngOnInit(): void {
@@ -78,14 +90,5 @@ export class TradeLogComponent implements OnInit, OnDestroy {
 
   getActionClass(action: string): string {
     return action === 'buy' ? 'action-buy' : action === 'sell' ? 'action-sell' : 'action-hold';
-  }
-
-  isExpanded(id: string): boolean {
-    return this.expandedTradeIds.has(id);
-  }
-
-  toggleExpand(id: string): void {
-    if (this.expandedTradeIds.has(id)) this.expandedTradeIds.delete(id);
-    else this.expandedTradeIds.add(id);
   }
 }
