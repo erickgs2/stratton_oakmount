@@ -50,4 +50,42 @@ describe('TradeLogComponent', () => {
     component.trades = [makeTrade({ id: '1' }), makeTrade({ id: '2' })];
     expect(component.tradeCountLabel).toBe("That's everything so far — 2 trades executed");
   });
+
+  it('returns null when there are no trades', () => {
+    component.trades = [];
+    expect(component.selectedTrade).toBeNull();
+  });
+
+  it('defaults to the first trade when nothing is explicitly selected', () => {
+    component.trades = [makeTrade({ id: 'a' }), makeTrade({ id: 'b' })];
+    expect(component.selectedTrade?.id).toBe('a');
+  });
+
+  it('returns the explicitly selected trade', () => {
+    component.trades = [makeTrade({ id: 'a' }), makeTrade({ id: 'b' })];
+    component.selectTrade('b');
+    expect(component.selectedTrade?.id).toBe('b');
+  });
+
+  it('opens mobile detail mode on selection when isMobile is true', () => {
+    component.isMobile = true;
+    component.trades = [makeTrade({ id: 'a' })];
+    component.selectTrade('a');
+    expect(component.mobileDetailMode).toBeTrue();
+  });
+
+  it('does not open mobile detail mode on selection when isMobile is false', () => {
+    component.isMobile = false;
+    component.trades = [makeTrade({ id: 'a' })];
+    component.selectTrade('a');
+    expect(component.mobileDetailMode).toBeFalse();
+  });
+
+  it('closeMobileDetail turns mobileDetailMode off', () => {
+    component.isMobile = true;
+    component.trades = [makeTrade({ id: 'a' })];
+    component.selectTrade('a');
+    component.closeMobileDetail();
+    expect(component.mobileDetailMode).toBeFalse();
+  });
 });
