@@ -83,8 +83,8 @@ mat-chip {
   max-height: 72vh;
   overflow-y: auto;
   border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--bg-sidebar);
+  border-radius: 8px;
+  background: var(--bg-surface);
 
   @media (max-width: 768px) {
     max-height: none;
@@ -121,7 +121,7 @@ mat-chip {
   flex: 1;
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
