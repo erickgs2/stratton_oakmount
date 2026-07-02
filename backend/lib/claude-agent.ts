@@ -338,7 +338,7 @@ export async function runAgentCycle(
   const {
     lastPrice, changePct, volume, indicators,
     currentPosition, currentAvgCost, availableFunds, effectiveCapital,
-    netLiquidation, totalUnrealizedPnl, positions,
+    netLiquidation, positions,
   } = ctx;
 
   const message = await anthropic.messages.create(ctx.request);
