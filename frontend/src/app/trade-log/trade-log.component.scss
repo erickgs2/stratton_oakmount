@@ -24,11 +24,48 @@
 .action-sell { background: rgba(239, 68, 68, 0.15);   color: var(--red); }
 .action-hold { background: rgba(156, 163, 175, 0.15); color: var(--text-muted); }
 
+.trade-row {
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+// Collapsed by default: single-line, truncated with an ellipsis, so a long
+// reason doesn't blow up every row's height. Expanding a row wraps its own
+// reason cell in place — the rest of the row stays a normal table row.
 .reason-cell {
   max-width: 320px;
-  white-space: normal;
-  word-break: break-word;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  .reason-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .expand-icon {
+    flex-shrink: 0;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+  }
+
+  &.expanded {
+    white-space: normal;
+
+    .reason-text {
+      overflow: visible;
+      text-overflow: unset;
+      white-space: normal;
+      word-break: break-word;
+    }
+  }
 }
 
 .trade-cards {
@@ -70,13 +107,38 @@
   }
 }
 
+// Collapsed by default: reason text clamps to 2 lines, tap the row to expand
+// to full text — same collapsed-by-default behavior as the desktop table.
 .reason-row {
-  align-items: flex-start;
+  align-items: stretch;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  cursor: pointer;
+
+  .reason-row-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .expand-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+  }
 
   .value {
     text-align: left;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &.expanded .value {
+    -webkit-line-clamp: unset;
+    overflow: visible;
   }
 }
 

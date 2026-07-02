@@ -33,6 +33,7 @@ export class TradeLogComponent implements OnInit, OnDestroy {
   marketFilter: 'MX' | 'USA' | '' = '';
   symbolFilter = '';
 
+  private expandedTradeIds = new Set<string>();
   private breakpointSub: Subscription | null = null;
 
   constructor(
@@ -77,5 +78,14 @@ export class TradeLogComponent implements OnInit, OnDestroy {
 
   getActionClass(action: string): string {
     return action === 'buy' ? 'action-buy' : action === 'sell' ? 'action-sell' : 'action-hold';
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedTradeIds.has(id);
+  }
+
+  toggleExpand(id: string): void {
+    if (this.expandedTradeIds.has(id)) this.expandedTradeIds.delete(id);
+    else this.expandedTradeIds.add(id);
   }
 }
