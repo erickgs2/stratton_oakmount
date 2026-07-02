@@ -4,6 +4,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { Subscription, interval } from 'rxjs';
 import { switchMap, startWith } from 'rxjs/operators';
 import { AgentLogService } from '../core/services/agent-log.service';
@@ -23,20 +24,27 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
   logs: AgentLog[] = [];
   loading = false;
   actionFilter: 'all' | 'buy' | 'sell' | 'hold' = 'all';
-  private expandedLogs = new Set<string>();
+  isMobile = false;
+  mobileDetailMode = false;
+  private selectedLogId: string | null = null;
 
   get filteredLogs(): AgentLog[] {
     if (this.actionFilter === 'all') return this.logs;
     return this.logs.filter(l => l.response.action === this.actionFilter);
   }
 
-  isExpanded(id: string): boolean {
-    return this.expandedLogs.has(id);
+  get selectedLog(): AgentLog | null {
+    const list = this.filteredLogs;
+    return list.find(l => l.id === this.selectedLogId) ?? list[0] ?? null;
   }
 
-  toggleExpand(id: string): void {
-    if (this.expandedLogs.has(id)) this.expandedLogs.delete(id);
-    else this.expandedLogs.add(id);
+  selectLog(id: string): void {
+    this.selectedLogId = id;
+    if (this.isMobile) this.mobileDetailMode = true;
+  }
+
+  closeMobileDetail(): void {
+    this.mobileDetailMode = false;
   }
 
   setActionFilter(f: 'all' | 'buy' | 'sell' | 'hold'): void {
@@ -57,11 +65,18 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
   readonly inputKeys = Object.keys(this.inputFieldLabels);
 
   private pollSub: Subscription | null = null;
+  private breakpointSub: Subscription | null = null;
 
-  constructor(private agentLogService: AgentLogService) {}
+  constructor(
+    private agentLogService: AgentLogService,
+    private breakpointObserver: BreakpointObserver,
+  ) {}
 
   ngOnInit(): void {
     this.startPolling();
+    this.breakpointSub = this.breakpointObserver.observe('(max-width: 768px)').subscribe(result => {
+      this.isMobile = result.matches;
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -73,6 +88,7 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
 
   ngOnDestroy(): void {
     this.pollSub?.unsubscribe();
+    this.breakpointSub?.unsubscribe();
   }
 
   private startPolling(): void {
