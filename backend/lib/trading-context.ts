@@ -12,9 +12,15 @@ interface TradeRecord {
   orderId: string;
 }
 
+interface LastPriceRecord {
+  price: number;
+  time: string;
+}
+
 interface DailyContext {
   date: string;
   trades: TradeRecord[];
+  lastPrices: Record<string, LastPriceRecord>;
 }
 
 interface PositionInput {
@@ -37,10 +43,11 @@ async function load(): Promise<DailyContext> {
   try {
     const raw = await readFile(CONTEXT_FILE, 'utf-8');
     const ctx = JSON.parse(raw) as DailyContext;
-    if (ctx.date !== today) return { date: today, trades: [] };
+    if (ctx.date !== today) return { date: today, trades: [], lastPrices: {} };
+    ctx.lastPrices = ctx.lastPrices ?? {}; // backward-compat: file may predate this field
     return ctx;
   } catch {
-    return { date: today, trades: [] };
+    return { date: today, trades: [], lastPrices: {} };
   }
 }
 
@@ -74,7 +81,24 @@ export async function recordTrade(params: {
 
 export async function resetDailyContext(): Promise<void> {
   const today = new Date().toISOString().split('T')[0];
-  await save({ date: today, trades: [] });
+  await save({ date: today, trades: [], lastPrices: {} });
+}
+
+// Read-only — safe to call from previewAgentRequest without corrupting the
+// real bot's next-cycle "since last cycle" comparison.
+export async function peekLastPrice(symbol: string): Promise<LastPriceRecord | null> {
+  const ctx = await load();
+  return ctx.lastPrices[symbol] ?? null;
+}
+
+// Mutating — call exactly once per real agent cycle (runAgentCycle only).
+export async function recordLastPrice(symbol: string, price: number): Promise<void> {
+  const ctx = await load();
+  const time = new Date().toLocaleTimeString('es-MX', {
+    hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'America/Mexico_City',
+  });
+  ctx.lastPrices[symbol] = { price, time };
+  await save(ctx);
 }
 
 export async function buildContextSection(

@@ -26,6 +26,9 @@ model BotConfig {
   capitalLimit        Float
   intervalMin         Int
   confidenceThreshold Float    @default(0.65)
+  takeProfitPct       Float    @default(1.5)   // percentage points, e.g. 1.5 = 1.5%
+  stopLossPct         Float    @default(1.0)   // percentage points, e.g. 1.0 = 1.0%
+  feeEstimatePct      Float    @default(0.10)  // neutral fallback; real per-market defaults (MX 0.30 / USA 0.05) applied by app layer + migration backfill
   isActive            Boolean  @default(false)
   updatedAt           DateTime @updatedAt
 }

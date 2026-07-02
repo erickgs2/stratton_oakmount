@@ -33,8 +33,14 @@ export class BotConfigComponent implements OnInit {
   mxSymbols = MX_SYMBOLS;
   usaSymbols = USA_SYMBOLS;
 
-  mxConfig: Partial<BotConfig> = { market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15, confidenceThreshold: 0.65 };
-  usaConfig: Partial<BotConfig> = { market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15, confidenceThreshold: 0.65 };
+  mxConfig: Partial<BotConfig> = {
+    market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15,
+    confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.30,
+  };
+  usaConfig: Partial<BotConfig> = {
+    market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15,
+    confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.05,
+  };
 
   saving = false;
 
@@ -111,6 +117,9 @@ export class BotConfigComponent implements OnInit {
       capitalLimit: config.capitalLimit ?? 10000,
       intervalMin: config.intervalMin ?? 15,
       confidenceThreshold: config.confidenceThreshold ?? 0.65,
+      takeProfitPct: config.takeProfitPct ?? 1.5,
+      stopLossPct: config.stopLossPct ?? 1.0,
+      feeEstimatePct: config.feeEstimatePct ?? (market === 'MX' ? 0.30 : 0.05),
     };
 
     // Always persist the config first, then start/stop the bot if needed

@@ -1,0 +1,70 @@
+.page-header {
+  margin-bottom: 24px;
+}
+
+.pnl-note {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 16px 0;
+  max-width: 720px;
+}
+
+.cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+mat-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+}
+
+.amount {
+  font-size: 28px;
+  font-weight: 500;
+  color: var(--accent);
+  margin: 8px 0;
+}
+
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+
+.loading-container {
+  display: flex;
+  justify-content: center;
+  padding: 48px;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 24px 0;
+}
+
+.days-table {
+  width: 100%;
+}
+
+.outcome-badge {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.outcome-win {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--green);
+}
+
+.outcome-loss {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--red);
+}
+
+.outcome-flat {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}

@@ -6,7 +6,7 @@ import { calculateIndicators } from '@/lib/indicators';
 import { isMarketOpen } from '@/lib/market-hours';
 import { prisma } from '@/lib/prisma';
 import { writeBotLog } from '@/lib/bot-logger';
-import { buildContextSection, recordTrade } from '@/lib/trading-context';
+import { buildContextSection, recordTrade, peekLastPrice, recordLastPrice } from '@/lib/trading-context';
 
 export interface AgentCycleResult {
   action: 'buy' | 'sell' | 'hold';
@@ -29,36 +29,86 @@ const SYSTEM_PROMPTS: Record<'MX' | 'USA', string> = {
   MX: `You are an expert trader on the Mexican Stock Exchange (BMV).
 You know the Mexican market, its leading issuers (America Movil, FEMSA, Walmart de Mexico, Grupo Bimbo, Grupo Carso)
 and the macroeconomic factors that affect it (USD/MXN exchange rate, Banxico rates, IPC index).
-Your goal is to generate consistent returns in Mexican pesos with conservative risk management.
+
+Your PRIMARY strategy is scalping: take many small, frequent gains of roughly 0.5%-2% per trade rather than
+holding for large moves. Lock in profits early and cut losses quickly — a fast, reliable small win beats a slow,
+uncertain large one. You are expected to complete full buy-then-sell round trips on the same symbol multiple
+times in a single day when the signal supports it.
+
+EXCEPTION: you may hold a position longer than the usual scalping target only when several indicators align to
+show strong, sustained momentum (e.g. RSI trending with the move and not yet overbought/oversold against it,
+price above both MA20 and MA50 with widening distance, volume ratio confirming participation). If you decide to
+deviate from the default scalping behavior and hold for a larger move, you MUST say so explicitly in "reason"
+(e.g. "Holding beyond scalping target — MA20/MA50/RSI/volume all confirm a strong uptrend").
+
+Your goal is to generate consistent returns in Mexican pesos while managing risk tightly on every trade.
 You MUST respond ONLY with valid JSON in this exact format:
 {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`,
 
   USA: `You are an expert trader on NYSE and Nasdaq.
-Your goal is to generate consistent returns in US dollars with conservative risk management.
+
+Your PRIMARY strategy is scalping: take many small, frequent gains of roughly 0.5%-2% per trade rather than
+holding for large moves. Lock in profits early and cut losses quickly — a fast, reliable small win beats a slow,
+uncertain large one. You are expected to complete full buy-then-sell round trips on the same symbol multiple
+times in a single day when the signal supports it.
+
+EXCEPTION: you may hold a position longer than the usual scalping target only when several indicators align to
+show strong, sustained momentum (e.g. RSI trending with the move and not yet overbought/oversold against it,
+price above both MA20 and MA50 with widening distance, volume ratio confirming participation). If you decide to
+deviate from the default scalping behavior and hold for a larger move, you MUST say so explicitly in "reason"
+(e.g. "Holding beyond scalping target — MA20/MA50/RSI/volume all confirm a strong uptrend").
+
+Your goal is to generate consistent returns in US dollars while managing risk tightly on every trade.
 You MUST respond ONLY with valid JSON in this exact format:
 {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`,
 };
 
+export interface AgentCycleConfig {
+  capitalLimit?: number;
+  confidenceThreshold?: number;
+  intervalMin?: number;
+  takeProfitPct?: number;
+  stopLossPct?: number;
+  feeEstimatePct?: number;
+}
+
+const DEFAULT_FEE_ESTIMATE_PCT: Record<'MX' | 'USA', number> = { MX: 0.30, USA: 0.05 };
+
 function sign(n: number): string { return n >= 0 ? '+' : ''; }
 
-function buildUserPrompt(
-  symbol: string,
-  market: 'MX' | 'USA',
-  lastPrice: number,
-  changePct: number,
-  volume: number,
-  indicators: ReturnType<typeof calculateIndicators>,
-  closePrices: number[],
-  currentPosition: number,
-  currentPositionAvgCost: number,
-  availableFunds: number,
-  capitalLimit: number | undefined,
-  effectiveCapital: number,
-  netLiquidation: number,
-  totalUnrealizedPnl: number,
-  intervalMin: number,
-  tradingContext: string,
-): string {
+interface BuildUserPromptParams {
+  symbol: string;
+  market: 'MX' | 'USA';
+  lastPrice: number;
+  changePct: number;
+  volume: number;
+  lastCyclePrice: number | null;
+  indicators: ReturnType<typeof calculateIndicators>;
+  closePrices: number[];
+  currentPosition: number;
+  currentPositionAvgCost: number;
+  availableFunds: number;
+  capitalLimit: number | undefined;
+  effectiveCapital: number;
+  netLiquidation: number;
+  totalUnrealizedPnl: number;
+  intervalMin: number;
+  confidenceThreshold: number;
+  takeProfitPct: number;
+  stopLossPct: number;
+  feeEstimatePct: number;
+  tradingContext: string;
+}
+
+function buildUserPrompt(p: BuildUserPromptParams): string {
+  const {
+    symbol, market, lastPrice, changePct, volume, lastCyclePrice,
+    indicators, closePrices, currentPosition, currentPositionAvgCost,
+    availableFunds, capitalLimit, effectiveCapital, netLiquidation,
+    totalUnrealizedPnl, intervalMin, confidenceThreshold,
+    takeProfitPct, stopLossPct, feeEstimatePct, tradingContext,
+  } = p;
+
   const currency = market === 'MX' ? 'MXN' : 'USD';
   const maxInvestment = effectiveCapital * 0.20;
   const maxQuantity = lastPrice > 0 ? Math.floor(maxInvestment / lastPrice) : 0;
@@ -86,23 +136,54 @@ function buildUserPrompt(
     : cashPct < 20 ? ' (limited liquidity)'
     : '';
 
-  // Current position context for the symbol being analyzed
+  // Current position context for the symbol being analyzed — includes this position's own
+  // unrealized P&L%, not just buried in the multi-position TRADING CONTEXT dump below
+  const symbolUnrealizedPnlPct = currentPosition > 0 && currentPositionAvgCost > 0
+    ? ((lastPrice - currentPositionAvgCost) / currentPositionAvgCost) * 100
+    : null;
+
   const positionLine = currentPosition > 0
-    ? `${currentPosition} shares already held (avg cost ${currentPositionAvgCost.toFixed(2)} ${currency})`
+    ? `${currentPosition} shares already held (avg cost ${currentPositionAvgCost.toFixed(2)} ${currency})` +
+      (symbolUnrealizedPnlPct != null
+        ? ` — unrealized P&L on this position: ${sign(symbolUnrealizedPnlPct)}${symbolUnrealizedPnlPct.toFixed(2)}%`
+        : '')
     : 'no current position';
+
+  // "Since last cycle" intraday momentum proxy — the indicators above are daily-bar based
+  // (BMV has no intraday data source at all), so this is the only true intraday signal available.
+  const sinceLastCycleLine = lastCyclePrice != null && lastCyclePrice > 0
+    ? (() => {
+        const pct = ((lastPrice - lastCyclePrice) / lastCyclePrice) * 100;
+        return `${sign(pct)}${pct.toFixed(2)}% since the last cycle (was ${lastCyclePrice.toFixed(2)} ${currency}) — short-term intraday momentum; the indicators below are daily-bar based and do not capture moves within today`;
+      })()
+    : 'first cycle of the day for this symbol — no prior intraday price yet';
+
+  // Take-profit / stop-loss evaluation against the symbol's own current unrealized P&L%
+  const tpSlStatusLine = currentPosition > 0 && symbolUnrealizedPnlPct != null
+    ? `Current unrealized P&L on this position: ${sign(symbolUnrealizedPnlPct)}${symbolUnrealizedPnlPct.toFixed(2)}% — ` +
+      (symbolUnrealizedPnlPct >= takeProfitPct
+        ? 'AT OR ABOVE take-profit target — strongly consider selling now.'
+        : symbolUnrealizedPnlPct <= -stopLossPct
+          ? 'AT OR BELOW stop-loss threshold — strongly consider selling now.'
+          : 'within normal range — no TP/SL trigger yet.')
+    : 'No open position in this symbol — take-profit/stop-loss do not apply until a position is opened.';
 
   return `You are being asked to analyze ${symbol} and return a trading decision as JSON.
 
 ━━━ CHECK FREQUENCY ━━━
 This analysis cycle runs every ${intervalMin} minute${intervalMin === 1 ? '' : 's'} during market hours.
 Implication: you will see this symbol again soon. Avoid acting on a marginal signal — wait for the next cycle
-if conditions are unclear. Also avoid repeating a buy/sell that already fired earlier today (see TRADING CONTEXT).
+if conditions are unclear. This is a scalping strategy: completing multiple full buy-then-sell round trips on
+${symbol} across the trading day is expected when signals support it — do not treat an earlier trade today as a
+reason to sit out a new signal now. The only thing to avoid is buying more of ${symbol} again immediately after
+a recent buy without a genuinely new signal (see TRADING CONTEXT for today's executed trades).
 
 ━━━ MARKET DATA ━━━
 Symbol    : ${symbol}
 Last Price: ${lastPrice.toFixed(2)} ${currency}  — the most recent trade price
 Day Change: ${sign(changePct)}${changePct.toFixed(2)}%         — price change vs yesterday's close
 Volume    : ${volume.toLocaleString()} shares   — total shares traded so far today
+Since Last Cycle: ${sinceLastCycleLine}
 
 ━━━ TECHNICAL INDICATORS ━━━
 RSI (14)       : ${indicators.rsi14.toFixed(2)}
@@ -147,6 +228,15 @@ Total Unrealized P&L    : ${sign(totalUnrealizedPnl)}${totalUnrealizedPnl.toFixe
 Current position in ${symbol}: ${positionLine}
   — your existing exposure to this specific symbol before any new trade
 
+━━━ RISK MANAGEMENT (TAKE PROFIT / STOP LOSS) ━━━
+Take-profit target : +${takeProfitPct.toFixed(2)}% — if you hold ${symbol} and unrealized P&L on this position has reached or passed this level, sell (take the win) unless the EXCEPTION in your system prompt clearly applies and you state so in "reason".
+Stop-loss threshold : -${stopLossPct.toFixed(2)}% — if you hold ${symbol} and unrealized P&L on this position has fallen to or past this level, sell to cut the loss. Do not "wait it out" past this threshold.
+${tpSlStatusLine}
+
+━━━ TRADING COSTS ━━━
+Estimated round-trip cost (fees + spread): ~${feeEstimatePct.toFixed(2)}% of trade value (buy + sell combined for ${market === 'MX' ? 'BMV' : 'US'} trades in this account).
+Rule of thumb: only take a trade if your expected edge is at least 2x this cost (~${(feeEstimatePct * 2).toFixed(2)}%) — otherwise fees can erase a small scalping gain. This is why the 0.5%-2% target range exists: it should comfortably clear this cost with room for a real profit.
+
 ━━━ TRADING CONTEXT ━━━
 ${tradingContext}
 
@@ -156,8 +246,10 @@ ${tradingContext}
 3. Never sell more shares than currently held in ${symbol}
 4. Effective capital limit (${effectiveCapital.toFixed(2)} ${currency}) is a hard ceiling — do not exceed it
 5. If the portfolio is already heavily invested (>80%), prefer hold over adding new positions unless signal is very strong
-6. Avoid repeating a trade you already executed today — check TODAY'S EXECUTED TRADES above
-7. Set confidence < ${0.65} if conditions are ambiguous; the bot will skip execution below the threshold
+6. If you already hold ${symbol}, do not buy more of it right after a recent buy without a genuinely fresh signal (avoid chasing/averaging up mid-signal). Full buy-then-sell round trips on the same symbol are expected and encouraged multiple times per day when the signal supports it — do not treat an earlier trade today as a reason to hold instead of acting on a new signal now.
+7. Apply the take-profit and stop-loss levels above: if held and at/above take-profit, prefer sell; if held and at/below stop-loss, prefer sell — unless the EXCEPTION for strong aligned momentum clearly applies (state this explicitly in "reason" if so)
+8. Do not take a buy or sell whose expected edge is smaller than roughly 2x the estimated round-trip trading cost above
+9. Set confidence < ${confidenceThreshold.toFixed(2)} if conditions are ambiguous; the bot will skip execution below the threshold
 
 Respond with JSON only: {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`;
 }
@@ -165,6 +257,7 @@ Respond with JSON only: {"action":"buy"|"sell"|"hold","quantity":0,"confidence":
 interface ClaudeRequestBody {
   model: string;
   max_tokens: number;
+  temperature: number;
   system: string;
   messages: { role: 'user'; content: string }[];
 }
@@ -191,9 +284,17 @@ interface AgentRequestContext {
 async function buildAgentRequestContext(
   symbol: string,
   market: 'MX' | 'USA',
-  capitalLimit: number | undefined,
-  intervalMin: number,
+  config: AgentCycleConfig,
 ): Promise<AgentRequestContext> {
+  const {
+    capitalLimit,
+    intervalMin = 15,
+    confidenceThreshold = 0.65,
+    takeProfitPct = 1.5,
+    stopLossPct = 1.0,
+    feeEstimatePct = DEFAULT_FEE_ESTIMATE_PCT[market],
+  } = config;
+
   let lastPrice: number;
   let changePct: number;
   let volume: number;
@@ -218,9 +319,10 @@ async function buildAgentRequestContext(
 
   const indicators = calculateIndicators(closePrices, volumes);
 
-  const [positions, summary] = await Promise.all([
+  const [positions, summary, lastCycle] = await Promise.all([
     ibkrClient.getPositions(),
     ibkrClient.getAccountSummary(),
+    peekLastPrice(symbol), // read-only — safe for both runAgentCycle and previewAgentRequest
   ]);
 
   const currentPos         = positions.find(p => p.ticker === symbol);
@@ -235,18 +337,22 @@ async function buildAgentRequestContext(
   const request: ClaudeRequestBody = {
     model: 'claude-sonnet-4-6',
     max_tokens: 400,
+    temperature: 0.2,
     system: SYSTEM_PROMPTS[market],
     messages: [
       {
         role: 'user',
-        content: buildUserPrompt(
+        content: buildUserPrompt({
           symbol, market, lastPrice, changePct, volume,
+          lastCyclePrice: lastCycle?.price ?? null,
           indicators, closePrices,
-          currentPosition, currentAvgCost,
+          currentPosition, currentPositionAvgCost: currentAvgCost,
           availableFunds, capitalLimit, effectiveCapital,
-          summary.netLiquidation, totalUnrealizedPnl,
-          intervalMin, tradingContext,
-        ),
+          netLiquidation: summary.netLiquidation, totalUnrealizedPnl,
+          intervalMin, confidenceThreshold,
+          takeProfitPct, stopLossPct, feeEstimatePct,
+          tradingContext,
+        }),
       },
     ],
   };
@@ -293,9 +399,16 @@ export async function previewAgentRequest(market: 'MX' | 'USA'): Promise<AgentRe
     throw new Error(`No symbols configured for ${market} — add at least one symbol in Bot Config first`);
   }
 
-  const capitalLimit = config?.capitalLimit ?? undefined;
-  const intervalMin  = config?.intervalMin ?? 15;
-  const ctx = await buildAgentRequestContext(symbol, market, capitalLimit, intervalMin);
+  const capitalLimit        = config?.capitalLimit ?? undefined;
+  const intervalMin         = config?.intervalMin ?? 15;
+  const confidenceThreshold = config?.confidenceThreshold ?? 0.65;
+  const takeProfitPct       = config?.takeProfitPct ?? 1.5;
+  const stopLossPct         = config?.stopLossPct ?? 1.0;
+  const feeEstimatePct      = config?.feeEstimatePct ?? DEFAULT_FEE_ESTIMATE_PCT[market];
+
+  const ctx = await buildAgentRequestContext(symbol, market, {
+    capitalLimit, intervalMin, confidenceThreshold, takeProfitPct, stopLossPct, feeEstimatePct,
+  });
 
   return {
     symbol,
@@ -326,19 +439,32 @@ export async function previewAgentRequest(market: 'MX' | 'USA'): Promise<AgentRe
 export async function runAgentCycle(
   symbol: string,
   market: 'MX' | 'USA',
-  capitalLimit?: number,
-  confidenceThreshold = 0.65,
-  intervalMin = 15,
+  config: AgentCycleConfig = {},
 ): Promise<AgentCycleResult> {
+  const {
+    capitalLimit,
+    confidenceThreshold = 0.65,
+    intervalMin = 15,
+    takeProfitPct = 1.5,
+    stopLossPct = 1.0,
+    feeEstimatePct = DEFAULT_FEE_ESTIMATE_PCT[market],
+  } = config;
+
   if (!isMarketOpen(market)) {
     return { action: 'hold', quantity: 0, confidence: 0, reason: 'Market is closed', executed: false };
   }
 
-  const ctx = await buildAgentRequestContext(symbol, market, capitalLimit, intervalMin);
+  const ctx = await buildAgentRequestContext(symbol, market, {
+    capitalLimit, confidenceThreshold, intervalMin, takeProfitPct, stopLossPct, feeEstimatePct,
+  });
   const {
     lastPrice, changePct, volume, indicators,
     currentPosition, effectiveCapital, positions,
   } = ctx;
+
+  // Record this cycle's price for the NEXT real cycle's "since last cycle" comparison.
+  // Runs every real cycle (buy/sell/hold) — never called from previewAgentRequest.
+  await recordLastPrice(symbol, lastPrice);
 
   const message = await anthropic.messages.create(ctx.request);
 

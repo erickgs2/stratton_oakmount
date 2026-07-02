@@ -59,6 +59,36 @@
               <mat-hint>Current: {{ mxConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
             </mat-form-field>
           </div>
+
+          <div class="field-block">
+            <h4>Take-Profit Target (%)</h4>
+            <p class="field-hint">Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L reaches this level, unless strong aligned momentum justifies holding longer.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Take-Profit (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.takeProfitPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ mxConfig.takeProfitPct | number:'1.1-2' }}% — recommended 0.5–2.0% for scalping</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Stop-Loss Threshold (%)</h4>
+            <p class="field-hint">Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L falls to this level, to cut losses quickly.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Stop-Loss (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.stopLossPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ mxConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Estimated Round-Trip Fee (%)</h4>
+            <p class="field-hint">Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Round-Trip Fee (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <mat-hint>Current: {{ mxConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
+            </mat-form-field>
+          </div>
         </div>
       </mat-card>
 
@@ -115,6 +145,36 @@
               <mat-label>Confidence Threshold</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
               <mat-hint>Current: {{ usaConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Take-Profit Target (%)</h4>
+            <p class="field-hint">Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L reaches this level, unless strong aligned momentum justifies holding longer.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Take-Profit (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.takeProfitPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ usaConfig.takeProfitPct | number:'1.1-2' }}% — recommended 0.5–2.0% for scalping</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Stop-Loss Threshold (%)</h4>
+            <p class="field-hint">Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L falls to this level, to cut losses quickly.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Stop-Loss (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.stopLossPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ usaConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Estimated Round-Trip Fee (%)</h4>
+            <p class="field-hint">Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Round-Trip Fee (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <mat-hint>Current: {{ usaConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
             </mat-form-field>
           </div>
         </div>

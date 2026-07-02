@@ -13,13 +13,31 @@ declare global {
 global.botIntervals = global.botIntervals ?? new Map();
 
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { market: 'MX' | 'USA'; symbols: string[]; capitalLimit: number; intervalMin: number; confidenceThreshold: number };
-  const { market, symbols, capitalLimit, intervalMin, confidenceThreshold } = body;
+  const body = await request.json() as {
+    market: 'MX' | 'USA';
+    symbols: string[];
+    capitalLimit: number;
+    intervalMin: number;
+    confidenceThreshold: number;
+    takeProfitPct: number;
+    stopLossPct: number;
+    feeEstimatePct: number;
+  };
+  const {
+    market, symbols, capitalLimit, intervalMin, confidenceThreshold,
+    takeProfitPct, stopLossPct, feeEstimatePct,
+  } = body;
 
   const config = await prisma.botConfig.upsert({
     where: { market },
-    create: { market, symbols, capitalLimit, intervalMin, confidenceThreshold, isActive: true },
-    update: { symbols, capitalLimit, intervalMin, confidenceThreshold, isActive: true },
+    create: {
+      market, symbols, capitalLimit, intervalMin, confidenceThreshold,
+      takeProfitPct, stopLossPct, feeEstimatePct, isActive: true,
+    },
+    update: {
+      symbols, capitalLimit, intervalMin, confidenceThreshold,
+      takeProfitPct, stopLossPct, feeEstimatePct, isActive: true,
+    },
   });
 
   await writeBotLog({
@@ -40,7 +58,10 @@ export async function POST(request: NextRequest) {
     if (!isMarketOpen(market)) return; // no API calls while market is closed
     for (const symbol of symbols) {
       try {
-        await runAgentCycle(symbol, market, capitalLimit, confidenceThreshold, intervalMin);
+        await runAgentCycle(symbol, market, {
+          capitalLimit, confidenceThreshold, intervalMin,
+          takeProfitPct, stopLossPct, feeEstimatePct,
+        });
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
         await writeBotLog({
