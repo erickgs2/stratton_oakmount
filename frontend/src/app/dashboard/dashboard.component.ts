@@ -13,9 +13,11 @@ import { FormsModule } from '@angular/forms';
 import { PortfolioService } from '../core/services/portfolio.service';
 import { BotService } from '../core/services/bot.service';
 import { OrderService } from '../core/services/order.service';
+import { PnlService } from '../core/services/pnl.service';
 import { Portfolio } from '../core/models/portfolio.model';
 import { BotConfig } from '../core/models/bot-config.model';
 import { Order } from '../core/models/order.model';
+import { PnlReport } from '../core/models/pnl.model';
 import { SymbolChartComponent } from '../symbol-chart/symbol-chart.component';
 type Market = 'MX' | 'USA';
 
@@ -43,6 +45,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   pendingOrders: Order[] = [];
   positionColumns = ['ticker', 'position', 'avgCost', 'mktValue', 'unrealizedPnl'];
   orderColumns = ['ticker', 'side', 'orderType', 'totalSize', 'filledQuantity', 'remainingQuantity', 'status'];
+  pnlReports: { MX: PnlReport | null; USA: PnlReport | null } = { MX: null, USA: null };
 
   private subs = new Subscription();
 
@@ -50,12 +53,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private portfolioService: PortfolioService,
     private botService: BotService,
     private orderService: OrderService,
+    private pnlService: PnlService,
   ) {}
 
   ngOnInit(): void {
     // Poll bot status every 60s — drives market-open state
     this.subs.add(
       interval(60_000).pipe(startWith(0)).subscribe(() => this.loadBotStatus())
+    );
+
+    // Poll realized P&L every 60s — only changes when trades execute, same
+    // cadence as bot status. Fetch both markets so switching tabs is instant.
+    this.subs.add(
+      interval(60_000).pipe(startWith(0)).subscribe(() => this.loadPnl())
     );
 
     // Poll pending orders every 30s
@@ -108,6 +118,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadPnl(): void {
+    (['MX', 'USA'] as const).forEach(market => {
+      this.subs.add(
+        this.pnlService.getReport(market).subscribe({
+          next: report => { this.pnlReports[market] = report; },
+        })
+      );
+    });
+  }
+
+  get activePnl(): PnlReport | null {
+    return this.pnlReports[this.activeMarket];
+  }
+
   onTabChange(index: number): void {
     if (index === 0) this.activeMarket = 'MX';
     else if (index === 1) this.activeMarket = 'USA';
@@ -135,6 +159,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
           capitalLimit: config.capitalLimit,
           intervalMin: config.intervalMin,
           confidenceThreshold: config.confidenceThreshold ?? 0.65,
+          takeProfitPct: config.takeProfitPct ?? 1.5,
+          stopLossPct: config.stopLossPct ?? 1.0,
+          feeEstimatePct: config.feeEstimatePct ?? (this.activeMarket === 'MX' ? 0.30 : 0.05),
         }).subscribe(() => this.loadBotStatus())
       );
     } else {

@@ -5,6 +5,9 @@ export interface BotConfig {
   capitalLimit: number;
   intervalMin: number;
   confidenceThreshold: number;
+  takeProfitPct: number;
+  stopLossPct: number;
+  feeEstimatePct: number;
   isActive: boolean;
   updatedAt: string;
 }

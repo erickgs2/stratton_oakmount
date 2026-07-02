@@ -27,4 +27,9 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./agent-logs/agent-logs-page.component').then(m => m.AgentLogsPageComponent),
   },
+  {
+    path: 'pnl-history',
+    loadComponent: () =>
+      import('./pnl-history/pnl-history.component').then(m => m.PnlHistoryComponent),
+  },
 ];

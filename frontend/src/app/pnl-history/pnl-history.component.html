@@ -1,0 +1,95 @@
+<div class="page-header">
+  <h1>P&amp;L History</h1>
+</div>
+
+<mat-tab-group (selectedIndexChange)="onTabChange($event)">
+  <mat-tab label="MX — BMV">
+    <ng-container *ngTemplateOutlet="marketContent"></ng-container>
+  </mat-tab>
+  <mat-tab label="USA — NYSE/Nasdaq">
+    <ng-container *ngTemplateOutlet="marketContent"></ng-container>
+  </mat-tab>
+</mat-tab-group>
+
+<ng-template #marketContent>
+  <div *ngIf="loading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+  </div>
+
+  <ng-container *ngIf="!loading && activeReport as report">
+    <p class="pnl-note">
+      Realized P&amp;L is gross (before commissions/slippage) — computed by FIFO-matching executed sells
+      against prior buys. Trades that predate this tracking, or manual trades placed outside the bot,
+      may be under-represented.
+    </p>
+
+    <div class="cards-row">
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Current Session</mat-card-title>
+          <mat-card-subtitle>{{ report.currency }} — realized today</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="amount" [class.positive]="report.currentSessionRealizedPnl > 0" [class.negative]="report.currentSessionRealizedPnl < 0">
+            {{ report.currentSessionRealizedPnl | number:'1.2-2' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>All-Time Total</mat-card-title>
+          <mat-card-subtitle>{{ report.currency }} — since tracking began</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <p class="amount" [class.positive]="report.allTimeRealizedPnl > 0" [class.negative]="report.allTimeRealizedPnl < 0">
+            {{ report.allTimeRealizedPnl | number:'1.2-2' }}
+          </p>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <div *ngIf="report.days.length === 0" class="empty-state">
+      No trading days recorded yet for this market.
+    </div>
+
+    <table *ngIf="report.days.length > 0" mat-table [dataSource]="report.days" class="days-table">
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let row">{{ row.date }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="outcome">
+        <th mat-header-cell *matHeaderCellDef>Outcome</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="outcome-badge" [ngClass]="outcomeClass(row.outcome)">{{ outcomeLabel(row.outcome) }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="realizedPnl">
+        <th mat-header-cell *matHeaderCellDef>Realized P&amp;L</th>
+        <td mat-cell *matCellDef="let row" [class.positive]="row.realizedPnl > 0" [class.negative]="row.realizedPnl < 0">
+          {{ row.realizedPnl | number:'1.2-2' }} {{ report.currency }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="buys">
+        <th mat-header-cell *matHeaderCellDef>Buys</th>
+        <td mat-cell *matCellDef="let row">{{ row.buys }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="sells">
+        <th mat-header-cell *matHeaderCellDef>Sells</th>
+        <td mat-cell *matCellDef="let row">{{ row.sells }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="holds">
+        <th mat-header-cell *matHeaderCellDef>Holds</th>
+        <td mat-cell *matCellDef="let row">{{ row.holds }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="dayColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: dayColumns;"></tr>
+    </table>
+  </ng-container>
+</ng-template>

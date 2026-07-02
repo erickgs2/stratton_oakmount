@@ -10,6 +10,9 @@ export interface StartBotPayload {
   capitalLimit: number;
   intervalMin: number;
   confidenceThreshold: number;
+  takeProfitPct: number;
+  stopLossPct: number;
+  feeEstimatePct: number;
 }
 
 export interface BotStatusResponse {

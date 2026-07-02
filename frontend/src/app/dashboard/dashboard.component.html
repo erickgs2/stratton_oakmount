@@ -84,6 +84,19 @@
         <p class="amount">{{ portfolio.summary.netLiquidation | number:'1.2-2' }}</p>
       </mat-card-content>
     </mat-card>
+
+    <mat-card *ngIf="activePnl as pnl">
+      <mat-card-header>
+        <mat-card-title>Session P&amp;L</mat-card-title>
+        <mat-card-subtitle>{{ pnl.currency }} — realized today</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount" [class.positive]="pnl.currentSessionRealizedPnl > 0" [class.negative]="pnl.currentSessionRealizedPnl < 0">
+          {{ pnl.currentSessionRealizedPnl | number:'1.2-2' }}
+        </p>
+        <p class="pnl-subline">All-time: {{ pnl.allTimeRealizedPnl | number:'1.2-2' }} {{ pnl.currency }}</p>
+      </mat-card-content>
+    </mat-card>
   </div>
 
   <div *ngIf="activeSymbols.length > 0" class="charts-section">

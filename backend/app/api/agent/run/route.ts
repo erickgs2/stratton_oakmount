@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { runAgentCycle } from '@/lib/claude-agent';
 
 export async function POST(request: NextRequest) {
@@ -10,7 +11,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = await runAgentCycle(symbol, market);
+    const config = await prisma.botConfig.findUnique({ where: { market } });
+    const result = await runAgentCycle(symbol, market, {
+      capitalLimit: config?.capitalLimit ?? undefined,
+      confidenceThreshold: config?.confidenceThreshold ?? 0.65,
+      intervalMin: config?.intervalMin ?? 15,
+      takeProfitPct: config?.takeProfitPct ?? 1.5,
+      stopLossPct: config?.stopLossPct ?? 1.0,
+      feeEstimatePct: config?.feeEstimatePct ?? (market === 'MX' ? 0.30 : 0.05),
+    });
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
