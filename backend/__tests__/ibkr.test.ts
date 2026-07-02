@@ -267,6 +267,25 @@ describe('IBKRClient', () => {
       expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
     });
 
+    it('uses the 87_raw companion field for volume when the display field is human-formatted (e.g. "13.9M")', async () => {
+      // Real IBKR response shape for a liquid stock: "87" is a formatted
+      // display string, "87_raw" is the same value as a plain number.
+      mockHttpsResponse(200, [{ conid: 265598, '31': '304.78', '83': 3.53, '87': '13.9M', '87_raw': 13900000 }]);
+
+      const result = await client.getMarketDataSnapshot(265598);
+
+      expect(result).toEqual({ lastPrice: 304.78, changePct: 3.53, volume: 13900000 });
+      expect(https.request).toHaveBeenCalledTimes(1); // no retry needed — this is a complete response
+    });
+
+    it('accepts numeric (non-string) field values, matching IBKR\'s inconsistent per-field typing', async () => {
+      mockHttpsResponse(200, [{ conid: 265598, '31': 168.42, '83': 1.25, '87_raw': 1300 }]);
+
+      const result = await client.getMarketDataSnapshot(265598);
+
+      expect(result).toEqual({ lastPrice: 168.42, changePct: 1.25, volume: 1300 });
+    });
+
     it('retries when the first response is incomplete, succeeds on a later attempt', async () => {
       const mockReq = { on: jest.fn(), write: jest.fn(), end: jest.fn() };
       let call = 0;
