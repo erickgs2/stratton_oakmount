@@ -1,4 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Subscription } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -22,18 +24,38 @@ import { Trade } from '../core/models/trade.model';
   templateUrl: './trade-log.component.html',
   styleUrls: ['./trade-log.component.scss'],
 })
-export class TradeLogComponent implements OnInit {
+export class TradeLogComponent implements OnInit, OnDestroy {
   trades: Trade[] = [];
   loading = false;
+  isMobile = false;
   displayedColumns = ['createdAt', 'symbol', 'market', 'action', 'quantity', 'price', 'currency', 'reason'];
 
   marketFilter: 'MX' | 'USA' | '' = '';
   symbolFilter = '';
 
-  constructor(private tradeService: TradeService) {}
+  private expandedTradeIds = new Set<string>();
+  private breakpointSub: Subscription | null = null;
+
+  constructor(
+    private tradeService: TradeService,
+    private breakpointObserver: BreakpointObserver,
+  ) {}
+
+  get tradeCountLabel(): string {
+    const n = this.trades.length;
+    if (n === 0) return 'No trades yet';
+    return `That's everything so far — ${n} trade${n === 1 ? '' : 's'} executed`;
+  }
 
   ngOnInit(): void {
     this.loadTrades();
+    this.breakpointSub = this.breakpointObserver.observe('(max-width: 768px)').subscribe(result => {
+      this.isMobile = result.matches;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.breakpointSub?.unsubscribe();
   }
 
   loadTrades(): void {
@@ -56,5 +78,14 @@ export class TradeLogComponent implements OnInit {
 
   getActionClass(action: string): string {
     return action === 'buy' ? 'action-buy' : action === 'sell' ? 'action-sell' : 'action-hold';
+  }
+
+  isExpanded(id: string): boolean {
+    return this.expandedTradeIds.has(id);
+  }
+
+  toggleExpand(id: string): void {
+    if (this.expandedTradeIds.has(id)) this.expandedTradeIds.delete(id);
+    else this.expandedTradeIds.add(id);
   }
 }

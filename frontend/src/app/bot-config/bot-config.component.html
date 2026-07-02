@@ -19,7 +19,7 @@
   <!-- MX Market Tab -->
   <mat-tab label="MX — BMV">
     <div class="config-section">
-      <div class="field-block full-width">
+      <mat-card class="config-card">
         <h3>Symbols (BMV IPC)</h3>
         <mat-chip-listbox
           multiple
@@ -27,39 +27,42 @@
           (change)="onSymbolChange($event, 'MX')">
           <mat-chip-option *ngFor="let s of mxSymbols" [value]="s">{{ s }}</mat-chip-option>
         </mat-chip-listbox>
-      </div>
+      </mat-card>
 
-      <div class="config-grid">
-        <div class="field-block">
-          <h3>Capital Limit per Cycle (MXN)</h3>
-          <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Capital Limit (MXN)</mat-label>
-            <input matInput type="number" [(ngModel)]="mxConfig.capitalLimit" min="1000">
-          </mat-form-field>
+      <mat-card class="config-card">
+        <h3>Trading Parameters</h3>
+        <div class="config-grid">
+          <div class="field-block">
+            <h4>Capital Limit per Cycle (MXN)</h4>
+            <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Capital Limit (MXN)</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.capitalLimit" min="1000">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Check Frequency</h4>
+            <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Interval (minutes)</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Confidence Threshold</h4>
+            <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Confidence Threshold</mat-label>
+              <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <mat-hint>Current: {{ mxConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
+            </mat-form-field>
+          </div>
         </div>
+      </mat-card>
 
-        <div class="field-block">
-          <h3>Check Frequency</h3>
-          <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Interval (minutes)</mat-label>
-            <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440">
-          </mat-form-field>
-        </div>
-
-        <div class="field-block">
-          <h3>Confidence Threshold</h3>
-          <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Confidence Threshold</mat-label>
-            <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
-            <mat-hint>Current: {{ mxConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="footer-row">
+      <mat-card class="config-card status-card">
         <mat-slide-toggle [(ngModel)]="mxConfig.isActive" color="primary">
           {{ mxConfig.isActive ? 'Active' : 'Inactive' }}
         </mat-slide-toggle>
@@ -67,14 +70,14 @@
         <button mat-raised-button color="primary" (click)="saveConfig('MX')" [disabled]="saving">
           Save MX Configuration
         </button>
-      </div>
+      </mat-card>
     </div>
   </mat-tab>
 
   <!-- USA Market Tab -->
   <mat-tab label="USA — NYSE/Nasdaq">
     <div class="config-section">
-      <div class="field-block full-width">
+      <mat-card class="config-card">
         <h3>Symbols (NYSE/Nasdaq)</h3>
         <mat-chip-listbox
           multiple
@@ -82,39 +85,42 @@
           (change)="onSymbolChange($event, 'USA')">
           <mat-chip-option *ngFor="let s of usaSymbols" [value]="s">{{ s }}</mat-chip-option>
         </mat-chip-listbox>
-      </div>
+      </mat-card>
 
-      <div class="config-grid">
-        <div class="field-block">
-          <h3>Capital Limit per Cycle (USD)</h3>
-          <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Capital Limit (USD)</mat-label>
-            <input matInput type="number" [(ngModel)]="usaConfig.capitalLimit" min="100">
-          </mat-form-field>
+      <mat-card class="config-card">
+        <h3>Trading Parameters</h3>
+        <div class="config-grid">
+          <div class="field-block">
+            <h4>Capital Limit per Cycle (USD)</h4>
+            <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Capital Limit (USD)</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.capitalLimit" min="100">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Check Frequency</h4>
+            <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Interval (minutes)</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>Confidence Threshold</h4>
+            <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+            <mat-form-field appearance="outline">
+              <mat-label>Confidence Threshold</mat-label>
+              <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <mat-hint>Current: {{ usaConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
+            </mat-form-field>
+          </div>
         </div>
+      </mat-card>
 
-        <div class="field-block">
-          <h3>Check Frequency</h3>
-          <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Interval (minutes)</mat-label>
-            <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440">
-          </mat-form-field>
-        </div>
-
-        <div class="field-block">
-          <h3>Confidence Threshold</h3>
-          <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
-          <mat-form-field appearance="outline">
-            <mat-label>Confidence Threshold</mat-label>
-            <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
-            <mat-hint>Current: {{ usaConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
-          </mat-form-field>
-        </div>
-      </div>
-
-      <div class="footer-row">
+      <mat-card class="config-card status-card">
         <mat-slide-toggle [(ngModel)]="usaConfig.isActive" color="primary">
           {{ usaConfig.isActive ? 'Active' : 'Inactive' }}
         </mat-slide-toggle>
@@ -122,7 +128,7 @@
         <button mat-raised-button color="primary" (click)="saveConfig('USA')" [disabled]="saving">
           Save USA Configuration
         </button>
-      </div>
+      </mat-card>
     </div>
   </mat-tab>
 </mat-tab-group>
