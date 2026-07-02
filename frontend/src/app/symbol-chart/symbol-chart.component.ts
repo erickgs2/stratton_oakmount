@@ -38,7 +38,10 @@ export class SymbolChartComponent implements OnInit, OnChanges {
     if (!this.symbol) return;
     this.loading = true;
     this.error = false;
-    this.marketDataService.getMXData(this.symbol).subscribe({
+    const request = this.market === 'USA'
+      ? this.marketDataService.getUSAData(this.symbol)
+      : this.marketDataService.getMXData(this.symbol);
+    request.subscribe({
       next: data => {
         this.data = data;
         this.buildChart(data.history);
