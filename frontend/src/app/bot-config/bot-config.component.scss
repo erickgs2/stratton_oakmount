@@ -49,6 +49,24 @@ mat-form-field {
   color: var(--text-muted);
 }
 
+// Trading Parameters fields: the description that used to sit here as a
+// visible .field-hint paragraph now lives in a tooltip on this icon instead,
+// to cut the vertical space each field-block takes up.
+.field-block h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+
+.field-info-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  cursor: help;
+}
+
 .ibkr-account-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);

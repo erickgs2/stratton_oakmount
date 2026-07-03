@@ -10,6 +10,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BotService } from '../core/services/bot.service';
 import { SettingsService } from '../core/services/settings.service';
 import { BotConfig } from '../core/models/bot-config.model';
@@ -25,6 +27,7 @@ const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
     MatTabsModule, MatChipsModule,
     MatFormFieldModule, MatInputModule, MatButtonModule,
     MatSlideToggleModule, MatSnackBarModule, MatCardModule,
+    MatIconModule, MatTooltipModule,
   ],
   templateUrl: './bot-config.component.html',
   styleUrls: ['./bot-config.component.scss'],

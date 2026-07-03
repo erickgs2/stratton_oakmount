@@ -37,8 +37,10 @@
         <h3>Trading Parameters</h3>
         <div class="config-grid">
           <div class="field-block">
-            <h4>Capital Limit per Cycle (MXN)</h4>
-            <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle.</p>
+            <h4>
+              Capital Limit per Cycle (MXN)
+              <mat-icon class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (MXN)</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.capitalLimit" min="1000">
@@ -46,8 +48,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Check Frequency</h4>
-            <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
+            <h4>
+              Check Frequency
+              <mat-icon class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440">
@@ -55,8 +59,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Confidence Threshold</h4>
-            <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+            <h4>
+              Confidence Threshold
+              <mat-icon class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
@@ -65,8 +71,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Take-Profit Target (%)</h4>
-            <p class="field-hint">Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L reaches this level, unless strong aligned momentum justifies holding longer.</p>
+            <h4>
+              Take-Profit Target (%)
+              <mat-icon class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.takeProfitPct" min="0.2" max="10" step="0.1">
@@ -75,8 +83,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Stop-Loss Threshold (%)</h4>
-            <p class="field-hint">Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L falls to this level, to cut losses quickly.</p>
+            <h4>
+              Stop-Loss Threshold (%)
+              <mat-icon class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.stopLossPct" min="0.2" max="10" step="0.1">
@@ -85,8 +95,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Estimated Round-Trip Fee (%)</h4>
-            <p class="field-hint">Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR.</p>
+            <h4>
+              Estimated Round-Trip Fee (%)
+              <mat-icon class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
               <input matInput type="number" [(ngModel)]="mxConfig.feeEstimatePct" min="0" max="5" step="0.01">
@@ -125,8 +137,10 @@
         <h3>Trading Parameters</h3>
         <div class="config-grid">
           <div class="field-block">
-            <h4>Capital Limit per Cycle (USD)</h4>
-            <p class="field-hint">Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle.</p>
+            <h4>
+              Capital Limit per Cycle (USD)
+              <mat-icon class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (USD)</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.capitalLimit" min="100">
@@ -134,8 +148,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Check Frequency</h4>
-            <p class="field-hint">How often the bot re-evaluates this market and may act, in minutes.</p>
+            <h4>
+              Check Frequency
+              <mat-icon class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440">
@@ -143,8 +159,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Confidence Threshold</h4>
-            <p class="field-hint">Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective.</p>
+            <h4>
+              Confidence Threshold
+              <mat-icon class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
@@ -153,8 +171,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Take-Profit Target (%)</h4>
-            <p class="field-hint">Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L reaches this level, unless strong aligned momentum justifies holding longer.</p>
+            <h4>
+              Take-Profit Target (%)
+              <mat-icon class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.takeProfitPct" min="0.2" max="10" step="0.1">
@@ -163,8 +183,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Stop-Loss Threshold (%)</h4>
-            <p class="field-hint">Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&amp;L falls to this level, to cut losses quickly.</p>
+            <h4>
+              Stop-Loss Threshold (%)
+              <mat-icon class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.stopLossPct" min="0.2" max="10" step="0.1">
@@ -173,8 +195,10 @@
           </div>
 
           <div class="field-block">
-            <h4>Estimated Round-Trip Fee (%)</h4>
-            <p class="field-hint">Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names.</p>
+            <h4>
+              Estimated Round-Trip Fee (%)
+              <mat-icon class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+            </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
               <input matInput type="number" [(ngModel)]="usaConfig.feeEstimatePct" min="0" max="5" step="0.01">
