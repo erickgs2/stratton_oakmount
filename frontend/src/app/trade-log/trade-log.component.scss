@@ -8,7 +8,13 @@
 
 .filters-row-mobile {
   display: flex;
-  align-items: center;
+  // Not align-items: center — mat-form-field's outline appearance reserves
+  // ~22px of empty hint/error space below the visible input box, so
+  // centering against the field's full height (box + reserved space) pulls
+  // the button down past the box's actual visual center. Top-align instead
+  // and nudge the button down by exactly (box height − button height) / 2
+  // to center it against the visible box alone.
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 12px;
 }
@@ -20,6 +26,7 @@
 
 .filter-trigger-btn {
   flex-shrink: 0;
+  margin-top: 4px;
 }
 
 .full-width {
