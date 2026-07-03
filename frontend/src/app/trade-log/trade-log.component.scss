@@ -6,6 +6,26 @@
   flex-wrap: wrap;
 }
 
+.filters-row-mobile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.symbol-field-mobile {
+  flex: 1;
+  width: 100%;
+}
+
+.filter-trigger-btn {
+  flex-shrink: 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
 .action-chip {
   padding: 4px 10px;
   border-radius: 12px;

@@ -32,6 +32,31 @@ h1 {
   gap: 8px;
 }
 
+.controls-mobile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.search-field-mobile {
+  flex: 1;
+  width: 100%;
+}
+
+.filter-trigger-btn {
+  flex-shrink: 0;
+}
+
+// Dialog content stacks Level/Market vertically — .filter-group itself stays
+// a horizontal row (label + chips) in both the desktop inline row and here,
+// this only controls spacing between the two groups.
+div[mat-dialog-content] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .filter-label {
   font-size: 12px;
   color: var(--text-muted);

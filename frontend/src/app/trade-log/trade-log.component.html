@@ -1,6 +1,7 @@
 <h1>Trade Log</h1>
 
-<div class="filters-row">
+<!-- Desktop: full filter row, unchanged -->
+<div class="filters-row" *ngIf="!isMobile">
   <mat-form-field appearance="outline">
     <mat-label>Market</mat-label>
     <mat-select [(ngModel)]="marketFilter" (ngModelChange)="loadTrades()">
@@ -20,6 +21,36 @@
     <mat-icon>clear</mat-icon> Clear
   </button>
 </div>
+
+<!-- Mobile: full-width symbol search + filter icon button that opens the Market filter in a modal -->
+<div class="filters-row-mobile" *ngIf="isMobile">
+  <mat-form-field appearance="outline" class="symbol-field-mobile">
+    <mat-label>Symbol</mat-label>
+    <input matInput [(ngModel)]="symbolFilter" placeholder="e.g. AMXL" (keyup.enter)="loadTrades()">
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+
+  <button mat-icon-button class="filter-trigger-btn" (click)="openFilters()" aria-label="Filters">
+    <mat-icon>filter_list</mat-icon>
+  </button>
+</div>
+
+<ng-template #filtersDialog>
+  <h2 mat-dialog-title>Filters</h2>
+  <div mat-dialog-content>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Market</mat-label>
+      <mat-select [(ngModel)]="marketFilter" (ngModelChange)="loadTrades()">
+        <mat-option value="">All</mat-option>
+        <mat-option value="MX">MX — BMV</mat-option>
+        <mat-option value="USA">USA — NYSE/Nasdaq</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+  <div mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Done</button>
+  </div>
+</ng-template>
 
 <div *ngIf="loading" class="loading-container">
   <mat-progress-spinner mode="indeterminate" diameter="36"></mat-progress-spinner>
