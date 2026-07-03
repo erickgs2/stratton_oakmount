@@ -34,6 +34,28 @@ body {
   color: var(--text-primary);
 }
 
+// Page-title h1 baseline. Angular Material's typography hierarchy is never
+// applied to bare <h1>/<h2>/etc (no `.mat-typography` class / no
+// `mat.typography-hierarchy()` include in this app), so every page h1 was
+// falling through to the raw browser UA default — font-size: 2em (~32px)
+// plus ~21px top/bottom margin. That's hero/marketing-page scale, not a
+// dense internal dashboard, and on a ~390px phone it ate a disproportionate
+// share of the viewport before any real content appeared. Component-scoped
+// styles (Angular adds an attribute selector to every selector under
+// ViewEncapsulation.Emulated) are always more specific than this bare `h1`,
+// so any page needing a different margin/weight can still override safely.
+h1 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0 0 16px;
+
+  @media (max-width: 768px) {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+}
+
 // For numeric/tabular data (prices, quantities, timestamps in tables) —
 // Fira Code's tabular figures keep columns aligned as values update,
 // instead of digits shifting width under the default proportional font.
@@ -58,9 +80,9 @@ html {
 // content, because Angular Material's inner toolbar row keeps its own
 // fixed height and doesn't stretch to fill an artificially taller box.
 .app-toolbar {
-  padding-top: 30px !important;
+  padding-top: 0px !important;
   height: auto !important;
-  min-height: calc(108px + var(--sat)) !important;
+  min-height: calc(82px + var(--sat)) !important;
 }
 
 // The sidenav is a full-height overlay panel on mobile (mode="over"),
