@@ -38,7 +38,7 @@
           <div class="field-block">
             <h4>
               Capital Limit per Cycle (MXN)
-              <mat-icon class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #capitalLimitInfoMX="matTooltip" class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $10,000 MXN and 5 symbols, Claude can invest up to $2,000 MXN per symbol per cycle." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="capitalLimitInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (MXN)</mat-label>
@@ -49,7 +49,7 @@
           <div class="field-block">
             <h4>
               Check Frequency
-              <mat-icon class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #intervalInfoMX="matTooltip" class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="intervalInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
@@ -60,7 +60,7 @@
           <div class="field-block">
             <h4>
               Confidence Threshold
-              <mat-icon class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #confidenceInfoMX="matTooltip" class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="confidenceInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
@@ -72,7 +72,7 @@
           <div class="field-block">
             <h4>
               Take-Profit Target (%)
-              <mat-icon class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #takeProfitInfoMX="matTooltip" class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="takeProfitInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
@@ -84,7 +84,7 @@
           <div class="field-block">
             <h4>
               Stop-Loss Threshold (%)
-              <mat-icon class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #stopLossInfoMX="matTooltip" class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="stopLossInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
@@ -96,7 +96,7 @@
           <div class="field-block">
             <h4>
               Estimated Round-Trip Fee (%)
-              <mat-icon class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #feeInfoMX="matTooltip" class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="feeInfoMX.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
@@ -138,7 +138,7 @@
           <div class="field-block">
             <h4>
               Capital Limit per Cycle (USD)
-              <mat-icon class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #capitalLimitInfoUSA="matTooltip" class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit — so with $1,000 USD and 5 symbols, Claude can invest up to $200 USD per symbol per cycle." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="capitalLimitInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (USD)</mat-label>
@@ -149,7 +149,7 @@
           <div class="field-block">
             <h4>
               Check Frequency
-              <mat-icon class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #intervalInfoUSA="matTooltip" class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="intervalInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
@@ -160,7 +160,7 @@
           <div class="field-block">
             <h4>
               Confidence Threshold
-              <mat-icon class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #confidenceInfoUSA="matTooltip" class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="confidenceInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
@@ -172,7 +172,7 @@
           <div class="field-block">
             <h4>
               Take-Profit Target (%)
-              <mat-icon class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #takeProfitInfoUSA="matTooltip" class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="takeProfitInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
@@ -184,7 +184,7 @@
           <div class="field-block">
             <h4>
               Stop-Loss Threshold (%)
-              <mat-icon class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #stopLossInfoUSA="matTooltip" class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="stopLossInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
@@ -196,7 +196,7 @@
           <div class="field-block">
             <h4>
               Estimated Round-Trip Fee (%)
-              <mat-icon class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names." matTooltipPosition="above" aria-label="Field info">info_outline</mat-icon>
+              <mat-icon #feeInfoUSA="matTooltip" class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="feeInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
