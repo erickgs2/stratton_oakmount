@@ -4,6 +4,10 @@
 
 h1 {
   margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    margin-bottom: 12px;
+  }
 }
 
 .controls {
@@ -26,6 +30,38 @@ h1 {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.controls-mobile {
+  display: flex;
+  // Not align-items: center — mat-form-field's outline appearance reserves
+  // ~22px of empty hint/error space below the visible input box, so
+  // centering against the field's full height (box + reserved space) pulls
+  // the button down past the box's actual visual center. Top-align instead
+  // and nudge the button down by exactly (box height − button height) / 2
+  // to center it against the visible box alone.
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.search-field-mobile {
+  flex: 1;
+  width: 100%;
+}
+
+.filter-trigger-btn {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+// Dialog content stacks Level/Market vertically — .filter-group itself stays
+// a horizontal row (label + chips) in both the desktop inline row and here,
+// this only controls spacing between the two groups.
+div[mat-dialog-content] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .filter-label {

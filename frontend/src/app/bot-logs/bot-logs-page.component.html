@@ -1,7 +1,8 @@
 <div class="bot-logs-container">
   <h1>Bot Logs</h1>
 
-  <div class="controls">
+  <!-- Desktop: full controls row, unchanged -->
+  <div class="controls" *ngIf="!isMobile">
     <mat-form-field appearance="outline" class="search-field">
       <mat-label>Search</mat-label>
       <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="symbol or message">
@@ -30,6 +31,49 @@
       </mat-chip-set>
     </div>
   </div>
+
+  <!-- Mobile: full-width search + filter icon button that opens Level/Market filters in a modal -->
+  <div class="controls-mobile" *ngIf="isMobile">
+    <mat-form-field appearance="outline" class="search-field-mobile">
+      <mat-label>Search</mat-label>
+      <input matInput [(ngModel)]="searchTerm" (ngModelChange)="onSearchChange()" placeholder="symbol or message">
+      <button *ngIf="searchTerm" matSuffix mat-icon-button (click)="searchTerm = ''; onSearchChange()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-icon matSuffix *ngIf="!searchTerm">search</mat-icon>
+    </mat-form-field>
+
+    <button mat-icon-button class="filter-trigger-btn" (click)="openFilters()" aria-label="Filters">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
+
+  <ng-template #filtersDialog>
+    <h2 mat-dialog-title>Filters</h2>
+    <div mat-dialog-content>
+      <div class="filter-group">
+        <span class="filter-label">Level:</span>
+        <mat-chip-set>
+          <mat-chip [class.active]="activeLevel === 'all'" (click)="setLevel('all')">All</mat-chip>
+          <mat-chip [class.active]="activeLevel === 'info'" (click)="setLevel('info')">Info</mat-chip>
+          <mat-chip [class.active]="activeLevel === 'warn'" (click)="setLevel('warn')">Warn</mat-chip>
+          <mat-chip [class.active]="activeLevel === 'error'" (click)="setLevel('error')">Error</mat-chip>
+        </mat-chip-set>
+      </div>
+
+      <div class="filter-group">
+        <span class="filter-label">Market:</span>
+        <mat-chip-set>
+          <mat-chip [class.active]="activeMarket === 'all'" (click)="setMarket('all')">All</mat-chip>
+          <mat-chip [class.active]="activeMarket === 'MX'" (click)="setMarket('MX')">MX</mat-chip>
+          <mat-chip [class.active]="activeMarket === 'USA'" (click)="setMarket('USA')">USA</mat-chip>
+        </mat-chip-set>
+      </div>
+    </div>
+    <div mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Done</button>
+    </div>
+  </ng-template>
 
   <div *ngIf="loading" class="loading-container">
     <mat-progress-spinner mode="indeterminate" diameter="40"></mat-progress-spinner>

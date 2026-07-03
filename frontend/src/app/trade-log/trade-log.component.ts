@@ -1,6 +1,6 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Subscription } from 'rxjs';
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatSelectModule } from '@angular/material/select';
@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { TradeService, TradeFilters } from '../core/services/trade.service';
 import { Trade } from '../core/models/trade.model';
 
@@ -19,6 +20,7 @@ import { Trade } from '../core/models/trade.model';
     CommonModule, FormsModule,
     MatSelectModule, MatFormFieldModule,
     MatInputModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   templateUrl: './trade-log.component.html',
   styleUrls: ['./trade-log.component.scss'],
@@ -32,13 +34,20 @@ export class TradeLogComponent implements OnInit, OnDestroy {
   marketFilter: 'MX' | 'USA' | '' = '';
   symbolFilter = '';
 
+  @ViewChild('filtersDialog') filtersDialogTpl!: TemplateRef<unknown>;
+
   private selectedTradeId: string | null = null;
   private breakpointSub: Subscription | null = null;
 
   constructor(
     private tradeService: TradeService,
     private breakpointObserver: BreakpointObserver,
+    private dialog: MatDialog,
   ) {}
+
+  openFilters(): void {
+    this.dialog.open(this.filtersDialogTpl, { width: '90vw', maxWidth: '400px' });
+  }
 
   get tradeCountLabel(): string {
     const n = this.trades.length;

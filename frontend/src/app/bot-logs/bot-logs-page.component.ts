@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { Component, OnInit, OnDestroy, ViewChild, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -7,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { Subscription, interval, of } from 'rxjs';
 import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotLogService } from '../core/services/bot-log.service';
@@ -21,6 +23,7 @@ const PAGE_SIZE = 50;
     CommonModule, FormsModule,
     MatFormFieldModule, MatInputModule, MatIconModule,
     MatButtonModule, MatChipsModule, MatProgressSpinnerModule,
+    MatDialogModule,
   ],
   templateUrl: './bot-logs-page.component.html',
   styleUrls: ['./bot-logs-page.component.scss'],
@@ -30,15 +33,27 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
   filteredLogs: BotLog[] = [];
   pagedLogs: BotLog[] = [];
   loading = true;
+  isMobile = false;
 
   searchTerm = '';
   activeLevel: 'all' | 'info' | 'warn' | 'error' = 'all';
   activeMarket: 'all' | 'MX' | 'USA' = 'all';
 
+  @ViewChild('filtersDialog') filtersDialogTpl!: TemplateRef<unknown>;
+
   private visibleCount = PAGE_SIZE;
   private sub = new Subscription();
+  private breakpointSub: Subscription | null = null;
 
-  constructor(private botLogService: BotLogService) {}
+  constructor(
+    private botLogService: BotLogService,
+    private breakpointObserver: BreakpointObserver,
+    private dialog: MatDialog,
+  ) {}
+
+  openFilters(): void {
+    this.dialog.open(this.filtersDialogTpl, { width: '90vw', maxWidth: '400px' });
+  }
 
   get hasMore(): boolean {
     return this.filteredLogs.length > this.visibleCount;
@@ -70,10 +85,14 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
         error: () => { this.loading = false; },
       })
     );
+    this.breakpointSub = this.breakpointObserver.observe('(max-width: 768px)').subscribe(result => {
+      this.isMobile = result.matches;
+    });
   }
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
+    this.breakpointSub?.unsubscribe();
   }
 
   setLevel(level: 'all' | 'info' | 'warn' | 'error'): void {
