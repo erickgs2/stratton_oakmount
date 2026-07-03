@@ -58,15 +58,38 @@ mat-form-field {
   //max-width: 1100px;
 }
 
-.ibkr-account-row {
+// Settings-row pattern: description on the left (capped width so hint text
+// stays readable instead of sprawling edge-to-edge), controls on the right.
+// Replaces the old single flex row where the input's own max-width capped
+// far short of the now-full-width card, leaving a large empty gap.
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.settings-row-info {
+  flex: 1 1 320px;
+  max-width: 480px;
+
+  h3 { margin: 0 0 4px; }
+  .field-hint { margin: 0; }
+}
+
+.settings-row-controls {
   display: flex;
   align-items: flex-start;
+  justify-content: flex-end;
+  flex: 1 1 420px;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .account-id-field {
-  flex: 1 1 320px;
-  max-width: 400px;
+  flex: 1 1 240px;
+  max-width: 320px;
 }
 
 .ibkr-account-actions {
@@ -77,13 +100,28 @@ mat-form-field {
 }
 
 @media (max-width: 768px) {
-  .ibkr-account-row {
+  .settings-row {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .settings-row-info {
+    // Same flex-basis-becomes-height issue as .account-id-field below —
+    // .settings-row switches to a column axis here, so the desktop
+    // `flex: 1 1 320px` above would otherwise force ~320px of empty height.
+    flex: none;
+    max-width: none;
+  }
+
+  .settings-row-controls {
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
   .account-id-field {
-    // flex: 1 1 320px sets *width* in the row layout above, but once the
+    // flex: 1 1 240px sets *width* in the row layout above, but once the
     // container switches to flex-direction: column here, the same
     // shorthand sets *height* instead (flex-basis follows the main
     // axis) — grow: 1 then stretches the field to fill the container's
