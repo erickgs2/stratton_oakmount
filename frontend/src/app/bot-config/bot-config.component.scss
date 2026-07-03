@@ -67,6 +67,18 @@ mat-form-field {
   cursor: help;
 }
 
+// Separated from the per-market Save button and the account settings above
+// it — a gateway logout is a global, disruptive action (drops the IBKR
+// connection for both markets), not a per-market config change, so it gets
+// its own space at the very bottom rather than sitting next to "Save".
+.gateway-logout-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
 .ibkr-account-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -113,7 +125,10 @@ mat-form-field {
 .ibkr-account-actions {
   display: flex;
   gap: 12px;
-  padding-top: 8px; // aligns with the input's baseline, not its floating label
+  // (56px input box − 36px button) / 2 — centers the button against the
+  // input's visible outline box, not the field's full height (which
+  // includes ~22px of reserved-but-empty hint/error space below the box).
+  padding-top: 10px;
   flex-wrap: wrap;
 }
 
