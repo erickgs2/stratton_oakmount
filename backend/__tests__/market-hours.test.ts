@@ -46,6 +46,18 @@ describe('isBMVOpen', () => {
     jest.useFakeTimers({ now: new Date('2026-06-29T21:00:00Z') });
     expect(isBMVOpen()).toBe(false);
   });
+
+  it('returns false on a BMV holiday during normal trading hours (Labor Day)', () => {
+    // 2026-05-01 Friday, 09:00 Mexico City (UTC-6) = 15:00 UTC — Día del Trabajo
+    jest.useFakeTimers({ now: new Date('2026-05-01T15:00:00Z') });
+    expect(isBMVOpen()).toBe(false);
+  });
+
+  it('returns false on a BMV holiday even though it is a normal weekday (Navidad)', () => {
+    // 2026-12-25 Friday, 09:00 Mexico City (UTC-6) = 15:00 UTC
+    jest.useFakeTimers({ now: new Date('2026-12-25T15:00:00Z') });
+    expect(isBMVOpen()).toBe(false);
+  });
 });
 
 describe('isNYSEOpen', () => {
@@ -59,6 +71,31 @@ describe('isNYSEOpen', () => {
 
   it('returns false on Saturday', () => {
     jest.useFakeTimers({ now: new Date('2026-06-27T15:00:00Z') });
+    expect(isNYSEOpen()).toBe(false);
+  });
+
+  it('returns false on Independence Day observed (July 3, 2026 — July 4 falls on a Saturday)', () => {
+    // 2026-07-03 Friday, 11:00 New York (UTC-4 EDT) = 15:00 UTC — this is the
+    // exact bug that let the bot place real orders into a closed exchange.
+    jest.useFakeTimers({ now: new Date('2026-07-03T15:00:00Z') });
+    expect(isNYSEOpen()).toBe(false);
+  });
+
+  it('returns true before the early close on the day after Thanksgiving', () => {
+    // 2026-11-27 Friday, 12:00 New York (UTC-5 EST) = 17:00 UTC — before 13:00 early close
+    jest.useFakeTimers({ now: new Date('2026-11-27T17:00:00Z') });
+    expect(isNYSEOpen()).toBe(true);
+  });
+
+  it('returns false after the early close on the day after Thanksgiving', () => {
+    // 2026-11-27 Friday, 13:30 New York (UTC-5 EST) = 18:30 UTC — after 13:00 early close
+    jest.useFakeTimers({ now: new Date('2026-11-27T18:30:00Z') });
+    expect(isNYSEOpen()).toBe(false);
+  });
+
+  it('returns false after the early close on Christmas Eve', () => {
+    // 2026-12-24 Thursday, 13:30 New York (UTC-5 EST) = 18:30 UTC — after 13:00 early close
+    jest.useFakeTimers({ now: new Date('2026-12-24T18:30:00Z') });
     expect(isNYSEOpen()).toBe(false);
   });
 });

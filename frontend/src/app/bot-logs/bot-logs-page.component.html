@@ -45,11 +45,17 @@
   </div>
 
   <div *ngFor="let log of pagedLogs" class="log-row">
-    <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
-    <span [class]="getLevelClass(log.level)" class="level-badge">{{ log.level }}</span>
-    <span class="event-chip">{{ log.event }}</span>
-    <span *ngIf="log.symbol" class="symbol">{{ log.symbol }}</span>
-    <span class="message">{{ log.message }}</span>
+    <div class="log-row-header">
+      <span class="timestamp">{{ log.createdAt | date:'MMM d, h:mm:ss a' }}</span>
+      <span class="badges">
+        <span [class]="getLevelClass(log.level)" class="level-badge">{{ log.level }}</span>
+        <span class="event-chip">{{ log.event }}</span>
+      </span>
+    </div>
+    <div class="log-row-body">
+      <span *ngIf="log.symbol" class="symbol">{{ log.symbol }}</span>
+      <span class="message">{{ log.message }}</span>
+    </div>
   </div>
 
   <div *ngIf="hasMore" class="load-more">

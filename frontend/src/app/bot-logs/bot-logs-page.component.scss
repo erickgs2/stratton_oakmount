@@ -87,6 +87,52 @@ mat-chip {
   &:hover {
     background: var(--bg-surface);
   }
+
+  // Below 768px the flat wrap-based flow reflows unpredictably (badges and
+  // symbol land on whatever line has room, in document order). Regroup into
+  // two explicit rows instead: header (timestamp + badges) and body (symbol
+  // + message). `display: contents` on the wrappers keeps desktop untouched
+  // — children still lay out as direct flex items of .log-row above 768px.
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 10px 12px;
+  }
+}
+
+.log-row-header {
+  display: contents;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+}
+
+.badges {
+  display: contents;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+}
+
+.log-row-body {
+  display: contents;
+
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+  }
 }
 
 .timestamp {
@@ -94,6 +140,10 @@ mat-chip {
   color: var(--text-muted);
   white-space: nowrap;
   min-width: 150px;
+
+  @media (max-width: 768px) {
+    min-width: 0;
+  }
 }
 
 .level-badge {
@@ -133,6 +183,11 @@ mat-chip {
   font-weight: 700;
   color: var(--accent);
   min-width: 80px;
+
+  @media (max-width: 768px) {
+    min-width: 0;
+    flex-shrink: 0;
+  }
 }
 
 .message {
