@@ -1,3 +1,5 @@
+import { isMarketHoliday, getEarlyCloseTime } from '@/lib/market-holidays';
+
 type Market = 'MX' | 'USA';
 
 function isWeekdayInRange(
@@ -5,7 +7,8 @@ function isWeekdayInRange(
   startHour: number,
   startMinute: number,
   endHour: number,
-  endMinute: number
+  endMinute: number,
+  market: Market,
 ): boolean {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -23,21 +26,29 @@ function isWeekdayInRange(
   const weekday = parts['weekday'];
   if (weekday === 'Sat' || weekday === 'Sun') return false;
 
+  if (isMarketHoliday(now, market)) return false;
+
   const hour = parseInt(parts['hour'], 10);
   const minute = parseInt(parts['minute'], 10);
   const currentMinutes = hour * 60 + minute;
   const startMinutes = startHour * 60 + startMinute;
-  const endMinutes = endHour * 60 + endMinute;
+
+  let endMinutes = endHour * 60 + endMinute;
+  const earlyClose = getEarlyCloseTime(now, market);
+  if (earlyClose) {
+    const [closeHour, closeMinute] = earlyClose.split(':').map(Number);
+    endMinutes = Math.min(endMinutes, closeHour * 60 + closeMinute);
+  }
 
   return currentMinutes >= startMinutes && currentMinutes < endMinutes;
 }
 
 export function isBMVOpen(): boolean {
-  return isWeekdayInRange('America/Mexico_City', 8, 30, 15, 0);
+  return isWeekdayInRange('America/Mexico_City', 8, 30, 15, 0, 'MX');
 }
 
 export function isNYSEOpen(): boolean {
-  return isWeekdayInRange('America/New_York', 9, 30, 16, 0);
+  return isWeekdayInRange('America/New_York', 9, 30, 16, 0, 'USA');
 }
 
 export function isMarketOpen(market: Market): boolean {
