@@ -148,6 +148,37 @@ export class BitsoClient {
       updatedAt: raw.updated_at,
     };
   }
+
+  async getBalances(): Promise<BitsoBalance[]> {
+    type RawBalance = { currency: string; available: string; locked: string; total: string };
+    const raw = await this.request<{ balances: RawBalance[] }>('GET', '/v3/balance/', undefined, true);
+    return raw.balances.map(b => ({
+      currency: b.currency,
+      available: parseFloat(b.available),
+      locked: parseFloat(b.locked),
+      total: parseFloat(b.total),
+    }));
+  }
+
+  async getFees(): Promise<BitsoBookFee[]> {
+    type RawFee = { book: string; taker_fee_decimal: string; maker_fee_decimal: string };
+    const raw = await this.request<{ fees: RawFee[] }>('GET', '/v3/fees/', undefined, true);
+    return raw.fees.map(f => ({
+      book: f.book,
+      takerFeeDecimal: parseFloat(f.taker_fee_decimal),
+      makerFeeDecimal: parseFloat(f.maker_fee_decimal),
+    }));
+  }
+
+  async placeOrder(params: PlaceBitsoOrderParams): Promise<string> {
+    const result = await this.request<{ oid: string }>(
+      'POST',
+      '/v3/orders/',
+      { book: params.book, side: params.side, type: 'market', major: params.major },
+      true,
+    );
+    return result.oid;
+  }
 }
 
 export const bitsoClient = new BitsoClient();

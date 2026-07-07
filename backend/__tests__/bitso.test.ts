@@ -87,4 +87,55 @@ describe('BitsoClient', () => {
       expect(book.updatedAt).toBe('2026-07-07T00:00:00+00:00');
     });
   });
+
+  describe('getBalances', () => {
+    it('signs the request with an HMAC Authorization header and parses balances', async () => {
+      mockHttpsResponse(200, {
+        success: true,
+        payload: { balances: [{ currency: 'mxn', available: '5000.00', locked: '0', total: '5000.00' }] },
+      });
+
+      const balances = await client.getBalances();
+
+      expect(balances[0]).toEqual({ currency: 'mxn', available: 5000, locked: 0, total: 5000 });
+      const opts = (https.request as jest.Mock).mock.calls[0][0];
+      expect(opts.headers.Authorization).toMatch(/^Bitso test-key:\d+:[0-9a-f]{64}$/);
+      expect(opts.path).toBe('/v3/balance/');
+    });
+  });
+
+  describe('getFees', () => {
+    it('parses taker/maker fee decimals per book', async () => {
+      mockHttpsResponse(200, {
+        success: true,
+        payload: { fees: [{ book: 'btc_mxn', taker_fee_decimal: '0.0025', maker_fee_decimal: '0.0020' }] },
+      });
+
+      const fees = await client.getFees();
+
+      expect(fees[0]).toEqual({ book: 'btc_mxn', takerFeeDecimal: 0.0025, makerFeeDecimal: 0.002 });
+    });
+  });
+
+  describe('placeOrder', () => {
+    it('sends type "market" with the given book/side/major and returns the order id', async () => {
+      const mockReq = mockHttpsResponse(200, { success: true, payload: { oid: 'ABC123' } });
+
+      const oid = await client.placeOrder({ book: 'eth_mxn', side: 'sell', major: '0.25' });
+
+      expect(oid).toBe('ABC123');
+      const sentBody = JSON.parse(mockReq.write.mock.calls[0][0] as string);
+      expect(sentBody).toEqual({ book: 'eth_mxn', side: 'sell', type: 'market', major: '0.25' });
+      const opts = (https.request as jest.Mock).mock.calls[0][0];
+      expect(opts.method).toBe('POST');
+      expect(opts.path).toBe('/v3/orders/');
+    });
+
+    it('rejects when Bitso returns success: false', async () => {
+      mockHttpsResponse(200, { success: false, error: { code: '0201', message: 'Invalid amount' } });
+
+      await expect(client.placeOrder({ book: 'btc_mxn', side: 'buy', major: '0' }))
+        .rejects.toThrow('Invalid amount');
+    });
+  });
 });
