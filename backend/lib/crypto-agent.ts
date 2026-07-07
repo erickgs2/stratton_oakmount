@@ -1,7 +1,19 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { CryptoIndicators } from '@/lib/crypto-indicators';
 import { bitsoClient } from '@/lib/bitso';
 import { getCryptoMarketData } from '@/lib/bitso-market-data';
 import { prisma } from '@/lib/prisma';
+import { writeBotLog } from '@/lib/bot-logger';
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+export interface AgentCycleResult {
+  action: 'buy' | 'sell' | 'hold';
+  quantity: number;
+  confidence: number;
+  reason: string;
+  executed: boolean;
+}
 
 interface ClaudeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -392,4 +404,131 @@ export async function previewCryptoAgentRequest(): Promise<CryptoAgentRequestPre
     },
     request: ctx.request,
   };
+}
+
+export async function runCryptoAgentCycle(
+  symbol: string,
+  config: CryptoAgentCycleConfig = {},
+): Promise<AgentCycleResult> {
+  const {
+    confidenceThreshold = 0.65,
+  } = config;
+
+  const ctx = await buildCryptoAgentRequestContext(symbol, config);
+  const { lastPrice, indicators, currentPosition, effectiveCapital } = ctx;
+
+  const message = await anthropic.messages.create(ctx.request);
+
+  const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
+  const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  let decision: ClaudeDecision;
+  try {
+    decision = JSON.parse(cleanText) as ClaudeDecision;
+  } catch {
+    decision = { action: 'hold', quantity: 0, confidence: 0, reason: `Parse error: ${rawText}` };
+  }
+
+  const maxInvestment = effectiveCapital * 0.20;
+  const maxQuantity   = lastPrice > 0 ? maxInvestment / lastPrice : 0;
+
+  if (decision.action === 'buy'  && decision.quantity > maxQuantity)     decision.quantity = maxQuantity;
+  if (decision.action === 'sell' && decision.quantity > currentPosition) decision.quantity = currentPosition;
+
+  let executed = false;
+  let orderId: string | undefined;
+
+  if (
+    (decision.action === 'buy' || decision.action === 'sell') &&
+    decision.confidence < confidenceThreshold &&
+    decision.quantity > 0
+  ) {
+    await writeBotLog({
+      level: 'warn',
+      event: 'order_skipped',
+      market: 'CRYPTO',
+      symbol,
+      message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} skipped — confidence ${decision.confidence.toFixed(2)} below ${confidenceThreshold.toFixed(2)} threshold`,
+      meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence, threshold: confidenceThreshold },
+    });
+  }
+
+  if (
+    (decision.action === 'buy' || decision.action === 'sell') &&
+    decision.confidence >= confidenceThreshold &&
+    decision.quantity > 0
+  ) {
+    try {
+      orderId = await bitsoClient.placeOrder({
+        book: symbol,
+        side: decision.action,
+        major: decision.quantity.toString(),
+      });
+      executed = true;
+      await writeBotLog({
+        level: 'info',
+        event: 'order_placed',
+        market: 'CRYPTO',
+        symbol,
+        message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} MXN — order #${orderId}`,
+      });
+    } catch (err) {
+      await writeBotLog({
+        level: 'warn',
+        event: 'order_skipped',
+        market: 'CRYPTO',
+        symbol,
+        message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} — Bitso rejected: ${(err as Error).message}`,
+        meta: { action: decision.action, quantity: decision.quantity },
+      });
+    }
+  }
+
+  await prisma.agentLog.create({
+    data: {
+      symbol,
+      market: 'CRYPTO',
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      marketData: JSON.parse(JSON.stringify({ lastPrice, indicators })),
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      response: JSON.parse(JSON.stringify(decision)),
+      executed,
+    },
+  });
+
+  let cycleNote = '';
+  if (decision.action !== 'hold') {
+    if (executed)                                      cycleNote = ` — executed (order #${orderId ?? ''})`;
+    else if (decision.confidence < confidenceThreshold) cycleNote = ` — skipped: confidence ${decision.confidence.toFixed(2)} below ${confidenceThreshold.toFixed(2)} threshold`;
+    else if (decision.quantity === 0)                  cycleNote = ` — skipped: quantity 0`;
+  }
+
+  await writeBotLog({
+    level: 'info',
+    event: 'cycle_complete',
+    market: 'CRYPTO',
+    symbol,
+    message: `${symbol} → ${decision.action.toUpperCase()} x${decision.quantity} (confidence ${decision.confidence.toFixed(2)})${cycleNote}`,
+    meta: { action: decision.action, quantity: decision.quantity, confidence: decision.confidence, executed },
+  });
+
+  if (executed) {
+    await prisma.trade.create({
+      data: {
+        symbol,
+        market: 'CRYPTO',
+        action: decision.action,
+        quantity: decision.quantity,
+        price: lastPrice,
+        currency: 'MXN',
+        reason: decision.reason,
+        // Trade.ibkrOrderId is a generically-named opaque order-id column —
+        // reused here for the Bitso order id rather than adding a new column
+        // or renaming it (renaming would require touching claude-agent.ts's
+        // MX/USA usages of the same field, which this plan avoids).
+        ibkrOrderId: orderId,
+      },
+    });
+  }
+
+  return { ...decision, executed };
 }
