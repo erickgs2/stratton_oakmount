@@ -7,6 +7,8 @@ import { isMarketOpen } from '@/lib/market-hours';
 import { prisma } from '@/lib/prisma';
 import { writeBotLog } from '@/lib/bot-logger';
 import { buildContextSection, recordTrade, peekLastPrice, recordLastPrice } from '@/lib/trading-context';
+import { Market } from '@/lib/market';
+import { previewCryptoAgentRequest, runCryptoAgentCycle, CryptoAgentRequestPreview } from '@/lib/crypto-agent';
 
 export interface AgentCycleResult {
   action: 'buy' | 'sell' | 'hold';
@@ -392,7 +394,9 @@ export interface AgentRequestPreview {
 // Read-only: builds the exact request runAgentCycle would send to Claude
 // right now for one of this market's configured symbols, without ever
 // calling Claude, placing an order, or writing a log/trade record.
-export async function previewAgentRequest(market: 'MX' | 'USA'): Promise<AgentRequestPreview> {
+export async function previewAgentRequest(market: Market): Promise<AgentRequestPreview | CryptoAgentRequestPreview> {
+  if (market === 'CRYPTO') return previewCryptoAgentRequest();
+
   const config = await prisma.botConfig.findUnique({ where: { market } });
   const symbol = config?.symbols?.[0];
   if (!symbol) {
@@ -438,9 +442,11 @@ export async function previewAgentRequest(market: 'MX' | 'USA'): Promise<AgentRe
 
 export async function runAgentCycle(
   symbol: string,
-  market: 'MX' | 'USA',
+  market: Market,
   config: AgentCycleConfig = {},
 ): Promise<AgentCycleResult> {
+  if (market === 'CRYPTO') return runCryptoAgentCycle(symbol, config);
+
   const {
     capitalLimit,
     confidenceThreshold = 0.65,
