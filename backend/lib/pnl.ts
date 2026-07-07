@@ -1,13 +1,17 @@
 import { prisma } from '@/lib/prisma';
+import { Market } from '@/lib/market';
 
-const MARKET_TIMEZONE: Record<'MX' | 'USA', string> = {
+const MARKET_TIMEZONE: Record<Market, string> = {
   MX: 'America/Mexico_City',
   USA: 'America/New_York',
+  // Crypto trades 24/7 with no natural "trading day" boundary — bucket by
+  // the same timezone used for the user's other reports, for consistency.
+  CRYPTO: 'America/Mexico_City',
 };
 
 // Local calendar date (YYYY-MM-DD) in the given market's timezone — same
 // timezone convention used for market-hours checks and trading-context.ts.
-function dateKey(date: Date, market: 'MX' | 'USA'): string {
+function dateKey(date: Date, market: Market): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: MARKET_TIMEZONE[market],
     year: 'numeric', month: '2-digit', day: '2-digit',
@@ -39,7 +43,7 @@ interface RealizedPnlEvent {
 // A sell that exceeds all recorded buy history (e.g. a position opened before
 // trade logging started) simply stops producing events once open lots run out
 // — the unmatched portion contributes no realized P&L rather than erroring.
-function computeRealizedPnlEvents(trades: TradeRow[], market: 'MX' | 'USA'): RealizedPnlEvent[] {
+function computeRealizedPnlEvents(trades: TradeRow[], market: Market): RealizedPnlEvent[] {
   const bySymbol = new Map<string, TradeRow[]>();
   for (const t of trades) {
     if (!bySymbol.has(t.symbol)) bySymbol.set(t.symbol, []);
@@ -91,15 +95,15 @@ export interface DailyPnlSummary {
 }
 
 export interface PnlReport {
-  market: 'MX' | 'USA';
+  market: Market;
   currency: string;
   currentSessionRealizedPnl: number;
   allTimeRealizedPnl: number;
   days: DailyPnlSummary[];
 }
 
-export async function getPnlReport(market: 'MX' | 'USA'): Promise<PnlReport> {
-  const currency = market === 'MX' ? 'MXN' : 'USD';
+export async function getPnlReport(market: Market): Promise<PnlReport> {
+  const currency = market === 'MX' ? 'MXN' : market === 'USA' ? 'USD' : 'MXN';
 
   const [trades, agentLogs] = await Promise.all([
     prisma.trade.findMany({ where: { market }, orderBy: { createdAt: 'asc' } }),
