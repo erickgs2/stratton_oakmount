@@ -1,4 +1,7 @@
 import { CryptoIndicators } from '@/lib/crypto-indicators';
+import { bitsoClient } from '@/lib/bitso';
+import { getCryptoMarketData } from '@/lib/bitso-market-data';
+import { prisma } from '@/lib/prisma';
 
 interface ClaudeDecision {
   action: 'buy' | 'sell' | 'hold';
@@ -156,4 +159,237 @@ ${recentTradesText}
 9. Set confidence < ${confidenceThreshold.toFixed(2)} if conditions are ambiguous; the bot will skip execution below the threshold
 
 Respond with JSON only: {"action":"buy"|"sell"|"hold","quantity":0,"confidence":0.0,"reason":"..."}`;
+}
+
+interface ClaudeRequestBody {
+  model: string;
+  max_tokens: number;
+  temperature: number;
+  system: string;
+  messages: { role: 'user'; content: string }[];
+}
+
+const DEFAULT_CRYPTO_FEE_ESTIMATE_PCT = 0.65; // round-trip fallback if getFees() can't be reached; overridden per-book below when available
+
+interface TradeForAvgCost {
+  action: string;
+  quantity: number;
+  price: number;
+  createdAt: Date;
+}
+
+// Bitso's balance endpoint reports total holdings but not cost basis, so avg
+// cost is derived from this app's own recorded buy/sell trades for the
+// symbol — a FIFO walk over the still-open quantity, same technique pnl.ts
+// uses for realized P&L. Bounded to the last 200 trades for this symbol,
+// which comfortably covers the curated small-symbol-list MVP.
+function computeAvgCostFromTrades(trades: TradeForAvgCost[], currentPosition: number): number {
+  if (currentPosition <= 0) return 0;
+  const sorted = [...trades].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  const lots: { quantity: number; price: number }[] = [];
+  for (const t of sorted) {
+    if (t.action === 'buy') {
+      lots.push({ quantity: t.quantity, price: t.price });
+    } else if (t.action === 'sell') {
+      let remaining = t.quantity;
+      while (remaining > 0 && lots.length > 0) {
+        const lot = lots[0];
+        const matched = Math.min(lot.quantity, remaining);
+        lot.quantity -= matched;
+        remaining -= matched;
+        if (lot.quantity <= 0) lots.shift();
+      }
+    }
+  }
+  const totalQty = lots.reduce((sum, l) => sum + l.quantity, 0);
+  if (totalQty <= 0) return 0;
+  const totalCost = lots.reduce((sum, l) => sum + l.quantity * l.price, 0);
+  return totalCost / totalQty;
+}
+
+export interface CryptoAgentRequestContext {
+  request: ClaudeRequestBody;
+  lastPrice: number;
+  changePct24h: number;
+  volume24h: number;
+  indicators: CryptoIndicators;
+  currentPosition: number;
+  currentAvgCost: number;
+  availableFunds: number;
+  effectiveCapital: number;
+  netLiquidation: number;
+  totalUnrealizedPnl: number;
+}
+
+interface CryptoAgentCycleConfig {
+  capitalLimit?: number;
+  confidenceThreshold?: number;
+  intervalMin?: number;
+  takeProfitPct?: number;
+  stopLossPct?: number;
+  feeEstimatePct?: number;
+}
+
+async function buildCryptoAgentRequestContext(
+  symbol: string,
+  config: CryptoAgentCycleConfig,
+): Promise<CryptoAgentRequestContext> {
+  const {
+    capitalLimit,
+    intervalMin = 15,
+    confidenceThreshold = 0.65,
+    takeProfitPct = 1.5,
+    stopLossPct = 1.0,
+  } = config;
+
+  const marketData = await getCryptoMarketData(symbol);
+  const [baseCurrency, quoteCurrency] = symbol.split('_');
+
+  const [balances, fees, recentTrades] = await Promise.all([
+    bitsoClient.getBalances(),
+    bitsoClient.getFees(),
+    prisma.trade.findMany({
+      where: { market: 'CRYPTO', symbol },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    }),
+  ]);
+
+  const baseBalance  = balances.find(b => b.currency === baseCurrency);
+  const quoteBalance = balances.find(b => b.currency === quoteCurrency);
+  const currentPosition = baseBalance?.total ?? 0;
+
+  const bookFee = fees.find(f => f.book === symbol);
+  const feeEstimatePct = config.feeEstimatePct
+    ?? (bookFee ? bookFee.takerFeeDecimal * 100 * 2 : DEFAULT_CRYPTO_FEE_ESTIMATE_PCT);
+
+  const availableFunds   = quoteBalance?.available ?? 0;
+  const effectiveCapital = capitalLimit ? Math.min(availableFunds, capitalLimit) : availableFunds;
+  const currentAvgCost   = computeAvgCostFromTrades(recentTrades, currentPosition);
+  const totalUnrealizedPnl = currentPosition > 0 && currentAvgCost > 0
+    ? (marketData.lastPrice - currentAvgCost) * currentPosition
+    : 0;
+  const netLiquidation = availableFunds + currentPosition * marketData.lastPrice;
+
+  const recentTradesText = recentTrades.length > 0
+    ? "RECENT TRADES (last 10):\n" + recentTrades
+        .slice(0, 10)
+        .slice()
+        .reverse()
+        .map(t => `• ${t.createdAt.toISOString()}  ${t.action.toUpperCase()} ${symbol} ×${t.quantity} @ ${t.price.toFixed(2)} MXN`)
+        .join('\n')
+    : 'RECENT TRADES: none yet for this symbol';
+
+  const request: ClaudeRequestBody = {
+    model: 'claude-sonnet-4-6',
+    max_tokens: 400,
+    temperature: 0.2,
+    system: SYSTEM_PROMPT_CRYPTO,
+    messages: [
+      {
+        role: 'user',
+        content: buildCryptoUserPrompt({
+          symbol,
+          lastPrice: marketData.lastPrice,
+          changePct24h: marketData.changePct24h,
+          volume24h: marketData.volume24h,
+          high24h: marketData.high24h,
+          low24h: marketData.low24h,
+          indicators: marketData.indicators,
+          currentPosition,
+          currentPositionAvgCost: currentAvgCost,
+          availableFunds,
+          capitalLimit,
+          effectiveCapital,
+          netLiquidation,
+          totalUnrealizedPnl,
+          intervalMin,
+          confidenceThreshold,
+          takeProfitPct,
+          stopLossPct,
+          feeEstimatePct,
+          recentTradesText,
+        }),
+      },
+    ],
+  };
+
+  return {
+    request,
+    lastPrice: marketData.lastPrice,
+    changePct24h: marketData.changePct24h,
+    volume24h: marketData.volume24h,
+    indicators: marketData.indicators,
+    currentPosition,
+    currentAvgCost,
+    availableFunds,
+    effectiveCapital,
+    netLiquidation,
+    totalUnrealizedPnl,
+  };
+}
+
+export interface CryptoAgentRequestPreview {
+  symbol: string;
+  market: 'CRYPTO';
+  readable: {
+    lastPrice: number;
+    changePct24h: number;
+    volume24h: number;
+    currency: string;
+    orderBookImbalance: number;
+    spreadPct: number;
+    changePctSinceSnapshot: number | null;
+    capitalLimit: number | null;
+    intervalMin: number;
+    availableFunds: number;
+    effectiveCapital: number;
+    netLiquidation: number;
+    totalUnrealizedPnl: number;
+    currentPosition: number;
+    currentAvgCost: number;
+  };
+  request: ClaudeRequestBody;
+}
+
+export async function previewCryptoAgentRequest(): Promise<CryptoAgentRequestPreview> {
+  const config = await prisma.botConfig.findUnique({ where: { market: 'CRYPTO' } });
+  const symbol = config?.symbols?.[0];
+  if (!symbol) {
+    throw new Error('No symbols configured for CRYPTO — add at least one symbol in Bot Config first');
+  }
+
+  const capitalLimit        = config?.capitalLimit ?? undefined;
+  const intervalMin         = config?.intervalMin ?? 15;
+  const confidenceThreshold = config?.confidenceThreshold ?? 0.65;
+  const takeProfitPct       = config?.takeProfitPct ?? 1.5;
+  const stopLossPct         = config?.stopLossPct ?? 1.0;
+  const feeEstimatePct      = config?.feeEstimatePct ?? undefined;
+
+  const ctx = await buildCryptoAgentRequestContext(symbol, {
+    capitalLimit, intervalMin, confidenceThreshold, takeProfitPct, stopLossPct, feeEstimatePct,
+  });
+
+  return {
+    symbol,
+    market: 'CRYPTO',
+    readable: {
+      lastPrice: ctx.lastPrice,
+      changePct24h: ctx.changePct24h,
+      volume24h: ctx.volume24h,
+      currency: 'MXN',
+      orderBookImbalance: ctx.indicators.orderBookImbalance,
+      spreadPct: ctx.indicators.spreadPct,
+      changePctSinceSnapshot: ctx.indicators.changePctSinceSnapshot,
+      capitalLimit: capitalLimit ?? null,
+      intervalMin,
+      availableFunds: ctx.availableFunds,
+      effectiveCapital: ctx.effectiveCapital,
+      netLiquidation: ctx.netLiquidation,
+      totalUnrealizedPnl: ctx.totalUnrealizedPnl,
+      currentPosition: ctx.currentPosition,
+      currentAvgCost: ctx.currentAvgCost,
+    },
+    request: ctx.request,
+  };
 }
