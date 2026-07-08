@@ -19,7 +19,9 @@ import { BotConfig } from '../core/models/bot-config.model';
 import { Order } from '../core/models/order.model';
 import { PnlReport } from '../core/models/pnl.model';
 import { SymbolChartComponent } from '../symbol-chart/symbol-chart.component';
-type Market = 'MX' | 'USA';
+import { Market } from '../core/models/market.model';
+import { CryptoPortfolioService } from '../core/services/crypto-portfolio.service';
+import { CryptoPortfolio } from '../core/models/crypto-portfolio.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -39,13 +41,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
   portfolio: Portfolio | null = null;
   portfolioUpdatedAt: Date | null = null;
   botConfigs: BotConfig[] = [];
-  marketOpen: { MX: boolean; USA: boolean } = { MX: false, USA: false };
+  marketOpen: { MX: boolean; USA: boolean; CRYPTO: boolean } = { MX: false, USA: false, CRYPTO: false };
   loading = true;
   error: string | null = null;
   pendingOrders: Order[] = [];
   positionColumns = ['ticker', 'position', 'avgCost', 'mktValue', 'unrealizedPnl'];
   orderColumns = ['ticker', 'side', 'orderType', 'totalSize', 'filledQuantity', 'remainingQuantity', 'status'];
-  pnlReports: { MX: PnlReport | null; USA: PnlReport | null } = { MX: null, USA: null };
+  pnlReports: { MX: PnlReport | null; USA: PnlReport | null; CRYPTO: PnlReport | null } = { MX: null, USA: null, CRYPTO: null };
+
+  cryptoPortfolio: CryptoPortfolio | null = null;
+  cryptoLoading = true;
+  cryptoError: string | null = null;
+  cryptoPositionColumns = ['book', 'quantity', 'lastPrice', 'mktValue'];
 
   private subs = new Subscription();
 
@@ -54,6 +61,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private botService: BotService,
     private orderService: OrderService,
     private pnlService: PnlService,
+    private cryptoPortfolioService: CryptoPortfolioService,
   ) {}
 
   ngOnInit(): void {
@@ -101,6 +109,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.error = null;
       })
     );
+
+    // Poll crypto portfolio every 30s — separate from the IBKR portfolio
+    // polling above since it's a distinct endpoint/data shape (Bitso has no
+    // "market closed" concept, so this always polls, unlike the IBKR one).
+    this.subs.add(
+      interval(30_000).pipe(
+        startWith(0),
+        switchMap(() => this.cryptoPortfolioService.getPortfolio().pipe(
+          catchError(err => {
+            this.cryptoError = err.message;
+            this.cryptoLoading = false;
+            return EMPTY;
+          })
+        )),
+      ).subscribe(portfolio => {
+        this.cryptoPortfolio = portfolio;
+        this.cryptoLoading = false;
+        this.cryptoError = null;
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -119,7 +147,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   loadPnl(): void {
-    (['MX', 'USA'] as const).forEach(market => {
+    (['MX', 'USA', 'CRYPTO'] as const).forEach(market => {
       this.subs.add(
         this.pnlService.getReport(market).subscribe({
           next: report => { this.pnlReports[market] = report; },
@@ -135,6 +163,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   onTabChange(index: number): void {
     if (index === 0) this.activeMarket = 'MX';
     else if (index === 1) this.activeMarket = 'USA';
+    else this.activeMarket = 'CRYPTO';
   }
 
   get activeBotConfig(): BotConfig | undefined {
@@ -161,7 +190,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           confidenceThreshold: config.confidenceThreshold ?? 0.65,
           takeProfitPct: config.takeProfitPct ?? 1.5,
           stopLossPct: config.stopLossPct ?? 1.0,
-          feeEstimatePct: config.feeEstimatePct ?? (this.activeMarket === 'MX' ? 0.30 : 0.05),
+          feeEstimatePct: config.feeEstimatePct,
         }).subscribe(() => this.loadBotStatus())
       );
     } else {
@@ -173,7 +202,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   get currency(): string {
-    return this.activeMarket === 'MX' ? 'MXN' : 'USD';
+    if (this.activeMarket === 'MX') return 'MXN';
+    if (this.activeMarket === 'USA') return 'USD';
+    return 'MXN';
   }
 
   get activeSymbols(): string[] {

@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MarketDataService } from '../core/services/market-data.service';
 import { MXMarketData, MarketDataPoint } from '../core/models/market-data.model';
+import { Market } from '../core/models/market.model';
 
 interface ChartPoint { x: number; y: number; }
 
@@ -14,7 +15,7 @@ interface ChartPoint { x: number; y: number; }
 })
 export class SymbolChartComponent implements OnInit, OnChanges {
   @Input() symbol = '';
-  @Input() market: 'MX' | 'USA' = 'MX';
+  @Input() market: Market = 'MX';
 
   data: MXMarketData | null = null;
   loading = true;

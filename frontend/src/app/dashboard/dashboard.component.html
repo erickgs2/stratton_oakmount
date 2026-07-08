@@ -27,6 +27,9 @@
   <mat-tab label="USA — NYSE/Nasdaq">
     <ng-container *ngTemplateOutlet="marketContent"></ng-container>
   </mat-tab>
+  <mat-tab label="CRYPTO — Bitso">
+    <ng-container *ngTemplateOutlet="cryptoContent"></ng-container>
+  </mat-tab>
 </mat-tab-group>
 
 <ng-template #marketContent>
@@ -182,5 +185,83 @@
     <tr mat-header-row *matHeaderRowDef="positionColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: positionColumns;"></tr>
   </table>
+  </div>
+</ng-template>
+
+<ng-template #cryptoContent>
+  <div *ngIf="cryptoLoading" class="loading-container">
+    <mat-progress-spinner mode="indeterminate" diameter="48"></mat-progress-spinner>
+  </div>
+
+  <div *ngIf="cryptoError" class="error-card">
+    <mat-icon>error</mat-icon>
+    {{ cryptoError }} — check your Bitso API credentials are configured.
+  </div>
+
+  <div *ngIf="!cryptoLoading && !cryptoError" class="portfolio-status">
+    <mat-icon class="status-icon open">wifi</mat-icon>
+    <span>Live · updating every 30s · crypto trades 24/7, no market hours</span>
+  </div>
+
+  <div *ngIf="!cryptoLoading && !cryptoError && cryptoPortfolio" class="cards-row">
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Available Funds</mat-card-title>
+        <mat-card-subtitle>MXN</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount">{{ cryptoPortfolio.availableFunds | number:'1.2-2' }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card>
+      <mat-card-header>
+        <mat-card-title>Net Liquidation</mat-card-title>
+        <mat-card-subtitle>MXN</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount">{{ cryptoPortfolio.netLiquidation | number:'1.2-2' }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card *ngIf="pnlReports.CRYPTO as pnl">
+      <mat-card-header>
+        <mat-card-title>Session P&amp;L</mat-card-title>
+        <mat-card-subtitle>{{ pnl.currency }} — realized today</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="amount" [class.positive]="pnl.currentSessionRealizedPnl > 0" [class.negative]="pnl.currentSessionRealizedPnl < 0">
+          {{ pnl.currentSessionRealizedPnl | number:'1.2-2' }}
+        </p>
+        <p class="pnl-subline">All-time: {{ pnl.allTimeRealizedPnl | number:'1.2-2' }} {{ pnl.currency }}</p>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <h2 *ngIf="cryptoPortfolio">Crypto Holdings</h2>
+  <div class="table-scroll" *ngIf="cryptoPortfolio && cryptoPortfolio.positions.length > 0">
+    <table mat-table [dataSource]="cryptoPortfolio.positions">
+      <ng-container matColumnDef="book">
+        <th mat-header-cell *matHeaderCellDef>Symbol</th>
+        <td mat-cell *matCellDef="let row">{{ row.book | uppercase }}</td>
+      </ng-container>
+      <ng-container matColumnDef="quantity">
+        <th mat-header-cell *matHeaderCellDef>Quantity</th>
+        <td mat-cell *matCellDef="let row">{{ row.quantity }}</td>
+      </ng-container>
+      <ng-container matColumnDef="lastPrice">
+        <th mat-header-cell *matHeaderCellDef>Last Price</th>
+        <td mat-cell *matCellDef="let row">{{ row.lastPrice | number:'1.2-2' }} MXN</td>
+      </ng-container>
+      <ng-container matColumnDef="mktValue">
+        <th mat-header-cell *matHeaderCellDef>Market Value</th>
+        <td mat-cell *matCellDef="let row">{{ row.mktValue | number:'1.2-2' }} MXN</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="cryptoPositionColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: cryptoPositionColumns;"></tr>
+    </table>
+  </div>
+  <div *ngIf="cryptoPortfolio && cryptoPortfolio.positions.length === 0" class="empty-state">
+    No crypto symbols configured yet — add one in Bot Config.
   </div>
 </ng-template>
