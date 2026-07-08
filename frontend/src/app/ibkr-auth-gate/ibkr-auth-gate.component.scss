@@ -43,11 +43,6 @@ p {
   line-height: 1.5;
 }
 
-.checking-label {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
 .account-section {
   margin: 12px 0;
   text-align: left;
@@ -80,4 +75,9 @@ p {
 .logout-message {
   font-size: 12px;
   color: var(--accent);
+}
+
+.cancel-button {
+  color: var(--text-muted) !important;
+  margin-top: 4px;
 }

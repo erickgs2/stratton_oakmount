@@ -1,4 +1,4 @@
-<div *ngIf="!(connected$ | async)" class="auth-overlay">
+<div *ngIf="showModal$ | async" class="auth-overlay">
   <div class="auth-card">
     <mat-icon class="auth-icon">link_off</mat-icon>
     <h2>Session Inactive</h2>
@@ -29,6 +29,7 @@
     </div>
     <p class="logout-hint">Stuck in a login loop? Log out to clear a stale gateway session, then try again.</p>
     <p class="logout-message" *ngIf="logoutMessage">{{ logoutMessage }}</p>
-    <small class="checking-label">Checking connection…</small>
+
+    <button mat-button class="cancel-button" (click)="cancel()">Cancel</button>
   </div>
 </div>

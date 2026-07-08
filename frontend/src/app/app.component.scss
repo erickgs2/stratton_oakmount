@@ -89,6 +89,64 @@
   letter-spacing: 0.5px;
 }
 
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.ibkr-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+  }
+
+  &.connected {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--green);
+  }
+}
+
+.login-btn {
+  height: 32px;
+  line-height: 30px;
+  font-size: 12px;
+}
+
+// Mobile toolbar is already tight (hamburger + 75px brand icon + title) —
+// drop the status text and shrink the chip/button to icon-only-ish so the
+// auth status doesn't force a second row or push the title off-screen.
+@media (max-width: 768px) {
+  .status-label {
+    display: none;
+  }
+
+  .status-chip {
+    padding: 4px 6px;
+  }
+
+  .login-btn {
+    min-width: 0;
+    padding: 0 10px;
+  }
+}
+
 .app-content {
   background: var(--bg-base);
   position: relative;

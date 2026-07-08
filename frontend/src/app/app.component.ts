@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
+import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { IbkrAuthService } from './core/services/ibkr-auth.service';
 import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component';
@@ -35,11 +36,15 @@ export class AppComponent implements OnInit {
 
   @ViewChild('sidenav') sidenav!: MatSidenav;
 
+  protected ibkrConnected$: Observable<boolean>;
+
   constructor(
     private breakpointObserver: BreakpointObserver,
     private router: Router,
     private ibkrAuthService: IbkrAuthService,
-  ) {}
+  ) {
+    this.ibkrConnected$ = this.ibkrAuthService.connected$;
+  }
 
   ngOnInit(): void {
     this.breakpointObserver.observe('(max-width: 768px)').subscribe(result => {
@@ -65,5 +70,9 @@ export class AppComponent implements OnInit {
     if (this.isMobile && !this.sidenav.opened) {
       this.sidenav.open();
     }
+  }
+
+  openIbkrLogin(): void {
+    this.ibkrAuthService.openLoginModal();
   }
 }

@@ -8,6 +8,9 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class IbkrAuthService implements OnDestroy {
   readonly connected$ = new BehaviorSubject<boolean>(true);
+  // Modal visibility is now user-driven (toolbar Login button), not tied
+  // directly to connected$ — the app stays usable while disconnected.
+  readonly showLoginModal$ = new BehaviorSubject<boolean>(false);
 
   private timeoutId: ReturnType<typeof setTimeout> | null = null;
   private readonly apiUrl = environment.apiUrl;
@@ -19,6 +22,14 @@ export class IbkrAuthService implements OnDestroy {
     if (this.polling) return;
     this.polling = true;
     this.tick();
+  }
+
+  openLoginModal(): void {
+    this.showLoginModal$.next(true);
+  }
+
+  closeLoginModal(): void {
+    this.showLoginModal$.next(false);
   }
 
   private tick(): void {
@@ -35,5 +46,6 @@ export class IbkrAuthService implements OnDestroy {
   ngOnDestroy(): void {
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.connected$.complete();
+    this.showLoginModal$.complete();
   }
 }

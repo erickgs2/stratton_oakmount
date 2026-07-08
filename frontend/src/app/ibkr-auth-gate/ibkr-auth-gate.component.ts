@@ -22,7 +22,8 @@ import { environment } from '../../environments/environment';
   styleUrl: './ibkr-auth-gate.component.scss',
 })
 export class IbkrAuthGateComponent implements OnInit {
-  protected connected$ = inject(IbkrAuthService).connected$;
+  private ibkrAuthService = inject(IbkrAuthService);
+  protected showModal$ = this.ibkrAuthService.showLoginModal$;
   private settingsService = inject(SettingsService);
 
   configuredAccountId: string | null = null;
@@ -41,6 +42,10 @@ export class IbkrAuthGateComponent implements OnInit {
   get canLogin(): boolean {
     if (this.accountChoice === 'keep') return !!this.configuredAccountId;
     return this.newAccountId.trim().length > 0;
+  }
+
+  cancel(): void {
+    this.ibkrAuthService.closeLoginModal();
   }
 
   async openLogin(): Promise<void> {
