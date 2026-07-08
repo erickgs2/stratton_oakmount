@@ -3,9 +3,10 @@ import { environment } from '../../../environments/environment';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { BotConfig } from '../models/bot-config.model';
+import { Market } from '../models/market.model';
 
 export interface StartBotPayload {
-  market: 'MX' | 'USA';
+  market: Market;
   symbols: string[];
   capitalLimit: number;
   intervalMin: number;
@@ -17,7 +18,7 @@ export interface StartBotPayload {
 
 export interface BotStatusResponse {
   configs: BotConfig[];
-  markets: { MX: boolean; USA: boolean };
+  markets: { MX: boolean; USA: boolean; CRYPTO: boolean };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -26,7 +27,7 @@ export class BotService {
 
   constructor(private http: HttpClient) {}
 
-  getStatus(market?: 'MX' | 'USA'): Observable<BotStatusResponse> {
+  getStatus(market?: Market): Observable<BotStatusResponse> {
     const url = market
       ? `${this.apiUrl}/bot/status?market=${market}`
       : `${this.apiUrl}/bot/status`;
@@ -47,7 +48,7 @@ export class BotService {
     );
   }
 
-  stopBot(market: 'MX' | 'USA'): Observable<{ status: string; market: string }> {
+  stopBot(market: Market): Observable<{ status: string; market: string }> {
     return this.http.post<{ status: string; market: string }>(
       `${this.apiUrl}/bot/stop`,
       { market }

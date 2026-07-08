@@ -3,9 +3,10 @@ import { environment } from '../../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Trade } from '../models/trade.model';
+import { Market } from '../models/market.model';
 
 export interface TradeFilters {
-  market?: 'MX' | 'USA';
+  market?: Market;
   symbol?: string;
   from?: string;
 }

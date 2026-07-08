@@ -1,7 +1,9 @@
+import { Market } from './market.model';
+
 export interface Trade {
   id: string;
   symbol: string;
-  market: 'MX' | 'USA';
+  market: Market;
   action: 'buy' | 'sell' | 'hold';
   quantity: number;
   price: number;
