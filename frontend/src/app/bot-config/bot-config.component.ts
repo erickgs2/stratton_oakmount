@@ -15,9 +15,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { BotService } from '../core/services/bot.service';
 import { SettingsService } from '../core/services/settings.service';
 import { BotConfig } from '../core/models/bot-config.model';
+import { Market } from '../core/models/market.model';
 
 const MX_SYMBOLS = ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'];
 const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
+const CRYPTO_SYMBOLS = ['btc_mxn', 'eth_mxn'];
 
 @Component({
   selector: 'app-bot-config',
@@ -35,6 +37,7 @@ const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
 export class BotConfigComponent implements OnInit {
   mxSymbols = MX_SYMBOLS;
   usaSymbols = USA_SYMBOLS;
+  cryptoSymbols = CRYPTO_SYMBOLS;
 
   mxConfig: Partial<BotConfig> = {
     market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15,
@@ -43,6 +46,10 @@ export class BotConfigComponent implements OnInit {
   usaConfig: Partial<BotConfig> = {
     market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15,
     confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.05,
+  };
+  cryptoConfig: Partial<BotConfig> = {
+    market: 'CRYPTO', symbols: ['btc_mxn'], capitalLimit: 500, intervalMin: 15,
+    confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.65,
   };
 
   saving = false;
@@ -61,8 +68,10 @@ export class BotConfigComponent implements OnInit {
     this.botService.getStatus().subscribe(response => {
       const mx = response.configs.find(c => c.market === 'MX');
       const usa = response.configs.find(c => c.market === 'USA');
+      const crypto = response.configs.find(c => c.market === 'CRYPTO');
       if (mx) this.mxConfig = { ...mx };
       if (usa) this.usaConfig = { ...usa };
+      if (crypto) this.cryptoConfig = { ...crypto };
     });
 
     this.settingsService.getSettings().subscribe(settings => {
@@ -104,14 +113,15 @@ export class BotConfigComponent implements OnInit {
     });
   }
 
-  onSymbolChange(event: MatChipListboxChange, market: 'MX' | 'USA'): void {
+  onSymbolChange(event: MatChipListboxChange, market: Market): void {
     const selected = Array.isArray(event.value) ? event.value : [event.value];
     if (market === 'MX') this.mxConfig.symbols = selected;
-    else this.usaConfig.symbols = selected;
+    else if (market === 'USA') this.usaConfig.symbols = selected;
+    else this.cryptoConfig.symbols = selected;
   }
 
-  saveConfig(market: 'MX' | 'USA'): void {
-    const config = market === 'MX' ? this.mxConfig : this.usaConfig;
+  saveConfig(market: Market): void {
+    const config = market === 'MX' ? this.mxConfig : market === 'USA' ? this.usaConfig : this.cryptoConfig;
     this.saving = true;
 
     const payload = {
@@ -122,7 +132,7 @@ export class BotConfigComponent implements OnInit {
       confidenceThreshold: config.confidenceThreshold ?? 0.65,
       takeProfitPct: config.takeProfitPct ?? 1.5,
       stopLossPct: config.stopLossPct ?? 1.0,
-      feeEstimatePct: config.feeEstimatePct ?? (market === 'MX' ? 0.30 : 0.05),
+      feeEstimatePct: config.feeEstimatePct ?? 0.10,
     };
 
     // Always persist the config first, then start/stop the bot if needed
