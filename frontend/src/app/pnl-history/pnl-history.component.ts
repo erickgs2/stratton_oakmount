@@ -8,6 +8,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Market } from '../core/models/market.model';
 import { PnlService } from '../core/services/pnl.service';
 import { PnlReport } from '../core/models/pnl.model';
+import { TabPersistenceService } from '../core/services/tab-persistence.service';
+
+const PNL_HISTORY_TAB_KEY = 'pnl-history-active-tab';
 
 @Component({
   selector: 'app-pnl-history',
@@ -21,12 +24,25 @@ import { PnlReport } from '../core/models/pnl.model';
   styleUrls: ['./pnl-history.component.scss'],
 })
 export class PnlHistoryComponent implements OnInit {
-  activeMarket: Market = 'MX';
+  activeTabIndex: number;
+  activeMarket: Market;
   reports: { MX: PnlReport | null; USA: PnlReport | null; CRYPTO: PnlReport | null } = { MX: null, USA: null, CRYPTO: null };
   loading = true;
   dayColumns = ['date', 'outcome', 'realizedPnl', 'buys', 'sells', 'holds'];
 
-  constructor(private pnlService: PnlService) {}
+  constructor(
+    private pnlService: PnlService,
+    private tabPersistence: TabPersistenceService,
+  ) {
+    this.activeTabIndex = this.tabPersistence.getSavedIndex(PNL_HISTORY_TAB_KEY, 2);
+    this.activeMarket = this.indexToMarket(this.activeTabIndex);
+  }
+
+  private indexToMarket(index: number): Market {
+    if (index === 0) return 'MX';
+    if (index === 1) return 'USA';
+    return 'CRYPTO';
+  }
 
   ngOnInit(): void {
     this.loadReports();
@@ -51,7 +67,9 @@ export class PnlHistoryComponent implements OnInit {
   }
 
   onTabChange(index: number): void {
-    this.activeMarket = index === 0 ? 'MX' : index === 1 ? 'USA' : 'CRYPTO';
+    this.activeTabIndex = index;
+    this.activeMarket = this.indexToMarket(index);
+    this.tabPersistence.saveIndex(PNL_HISTORY_TAB_KEY, index);
   }
 
   get activeReport(): PnlReport | null {

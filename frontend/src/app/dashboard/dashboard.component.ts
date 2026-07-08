@@ -22,6 +22,9 @@ import { SymbolChartComponent } from '../symbol-chart/symbol-chart.component';
 import { Market } from '../core/models/market.model';
 import { CryptoPortfolioService } from '../core/services/crypto-portfolio.service';
 import { CryptoPortfolio } from '../core/models/crypto-portfolio.model';
+import { TabPersistenceService } from '../core/services/tab-persistence.service';
+
+const DASHBOARD_TAB_KEY = 'dashboard-active-tab';
 
 @Component({
   selector: 'app-dashboard',
@@ -37,7 +40,8 @@ import { CryptoPortfolio } from '../core/models/crypto-portfolio.model';
   styleUrls: ['./dashboard.component.scss'],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  activeMarket: Market = 'MX';
+  activeTabIndex: number;
+  activeMarket: Market;
   portfolio: Portfolio | null = null;
   portfolioUpdatedAt: Date | null = null;
   botConfigs: BotConfig[] = [];
@@ -62,7 +66,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private orderService: OrderService,
     private pnlService: PnlService,
     private cryptoPortfolioService: CryptoPortfolioService,
-  ) {}
+    private tabPersistence: TabPersistenceService,
+  ) {
+    this.activeTabIndex = this.tabPersistence.getSavedIndex(DASHBOARD_TAB_KEY, 2);
+    this.activeMarket = this.indexToMarket(this.activeTabIndex);
+  }
+
+  private indexToMarket(index: number): Market {
+    if (index === 0) return 'MX';
+    if (index === 1) return 'USA';
+    return 'CRYPTO';
+  }
 
   ngOnInit(): void {
     // Poll bot status every 60s — drives market-open state
@@ -161,9 +175,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   onTabChange(index: number): void {
-    if (index === 0) this.activeMarket = 'MX';
-    else if (index === 1) this.activeMarket = 'USA';
-    else this.activeMarket = 'CRYPTO';
+    this.activeTabIndex = index;
+    this.activeMarket = this.indexToMarket(index);
+    this.tabPersistence.saveIndex(DASHBOARD_TAB_KEY, index);
   }
 
   get activeBotConfig(): BotConfig | undefined {

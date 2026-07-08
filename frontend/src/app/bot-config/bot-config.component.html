@@ -18,7 +18,7 @@
   </div>
 </mat-card>
 
-<mat-tab-group>
+<mat-tab-group [selectedIndex]="activeTabIndex" (selectedIndexChange)="onTabChange($event)">
   <!-- MX Market Tab -->
   <mat-tab label="MX — BMV">
     <div class="config-section">
