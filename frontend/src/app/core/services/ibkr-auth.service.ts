@@ -38,8 +38,7 @@ export class IbkrAuthService implements OnDestroy {
       .pipe(catchError(() => of({ connected: false })))
       .subscribe(res => {
         this.connected$.next(res.connected);
-        const delay = res.connected ? 60_000 : 3_000;
-        this.timeoutId = setTimeout(() => this.tick(), delay);
+        this.timeoutId = setTimeout(() => this.tick(), 60_000);
       });
   }
 
