@@ -6,9 +6,10 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AgentLogService } from '../core/services/agent-log.service';
 import { AgentRequestPreview } from '../core/models/agent-request-preview.model';
+import { Market } from '../core/models/market.model';
 
 interface PreviewSlot {
-  market: 'MX' | 'USA';
+  market: Market;
   label: string;
   preview: AgentRequestPreview | null;
   error: string | null;
@@ -33,6 +34,7 @@ export class RequestExamplesComponent {
   slots: PreviewSlot[] = [
     { market: 'MX', label: 'MX — BMV', preview: null, error: null },
     { market: 'USA', label: 'USA — NYSE/Nasdaq', preview: null, error: null },
+    { market: 'CRYPTO', label: 'CRYPTO — Bitso', preview: null, error: null },
   ];
 
   constructor(private agentLogService: AgentLogService) {}
@@ -61,6 +63,27 @@ export class RequestExamplesComponent {
   }
 
   readableRows(preview: AgentRequestPreview): ReadableRow[] {
+    if (preview.market === 'CRYPTO') {
+      const r = preview.readable;
+      const currency = r.currency;
+      return [
+        { label: 'Symbol', value: preview.symbol },
+        { label: 'Last Price', value: `${r.lastPrice.toFixed(2)} ${currency}` },
+        { label: '24h Change', value: `${r.changePct24h >= 0 ? '+' : ''}${r.changePct24h.toFixed(2)}%` },
+        { label: '24h Volume', value: r.volume24h.toLocaleString() },
+        { label: 'Order Book Imbalance', value: r.orderBookImbalance.toFixed(2) },
+        { label: 'Bid/Ask Spread', value: `${r.spreadPct.toFixed(3)}%` },
+        { label: 'Change Since Last Check', value: r.changePctSinceSnapshot != null ? `${r.changePctSinceSnapshot >= 0 ? '+' : ''}${r.changePctSinceSnapshot.toFixed(2)}%` : 'insufficient history yet' },
+        { label: 'Capital Limit', value: r.capitalLimit != null ? `${r.capitalLimit.toFixed(2)} ${currency}` : 'not set' },
+        { label: 'Check Frequency', value: `every ${r.intervalMin} min` },
+        { label: 'Available Funds', value: `${r.availableFunds.toFixed(2)} ${currency}` },
+        { label: 'Effective Capital', value: `${r.effectiveCapital.toFixed(2)} ${currency}` },
+        { label: 'Net Liquidation', value: `${r.netLiquidation.toFixed(2)} ${currency}` },
+        { label: 'Total Unrealized P&L', value: `${r.totalUnrealizedPnl >= 0 ? '+' : ''}${r.totalUnrealizedPnl.toFixed(2)} ${currency}` },
+        { label: 'Current Position', value: r.currentPosition > 0 ? `${r.currentPosition} @ ${r.currentAvgCost.toFixed(2)} ${currency}` : 'none' },
+      ];
+    }
+
     const r = preview.readable;
     const currency = r.currency;
     return [

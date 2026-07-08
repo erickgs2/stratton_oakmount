@@ -6,11 +6,18 @@ export interface AgentLogIndicators {
   volumeRatio: number;
 }
 
+export interface CryptoAgentLogIndicators {
+  changePctSinceSnapshot: number | null;
+  minutesSinceSnapshot: number | null;
+  orderBookImbalance: number;
+  spreadPct: number;
+}
+
 export interface AgentLogMarketData {
   lastPrice: number;
-  changePct: number;
-  volume: number;
-  indicators: AgentLogIndicators;
+  changePct?: number;
+  volume?: number;
+  indicators: AgentLogIndicators | CryptoAgentLogIndicators;
 }
 
 export interface AgentLogResponse {
