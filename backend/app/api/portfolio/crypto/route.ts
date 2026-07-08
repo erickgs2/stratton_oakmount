@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCryptoPortfolio } from '@/lib/bitso-portfolio';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   const config = await prisma.botConfig.findUnique({ where: { market: 'CRYPTO' } });
   const symbols = config?.symbols ?? [];
 
