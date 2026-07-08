@@ -13,6 +13,7 @@ import { Subscription, interval, of } from 'rxjs';
 import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotLogService } from '../core/services/bot-log.service';
 import { BotLog } from '../core/models/bot-log.model';
+import { Market } from '../core/models/market.model';
 
 const PAGE_SIZE = 50;
 
@@ -37,7 +38,7 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
 
   searchTerm = '';
   activeLevel: 'all' | 'info' | 'warn' | 'error' = 'all';
-  activeMarket: 'all' | 'MX' | 'USA' = 'all';
+  activeMarket: 'all' | Market = 'all';
 
   @ViewChild('filtersDialog') filtersDialogTpl!: TemplateRef<unknown>;
 
@@ -101,7 +102,7 @@ export class BotLogsPageComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  setMarket(market: 'all' | 'MX' | 'USA'): void {
+  setMarket(market: 'all' | Market): void {
     this.activeMarket = market;
     this.visibleCount = PAGE_SIZE;
     this.applyFilters();
