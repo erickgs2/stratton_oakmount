@@ -63,11 +63,21 @@ export class BitsoClient {
   private readonly apiKey: string;
   private readonly apiSecret: string;
   private readonly hostname: string;
+  private lastNonce = 0;
 
   constructor() {
     this.apiKey = process.env.BITSO_API_KEY ?? '';
     this.apiSecret = process.env.BITSO_API_SECRET ?? '';
     this.hostname = process.env.BITSO_API_HOSTNAME ?? 'api.bitso.com';
+  }
+
+  // Must be strictly increasing per Bitso's auth spec. Date.now() alone risks
+  // two calls in the same millisecond (e.g. concurrent authenticated requests)
+  // reusing a value — guard with a monotonic floor against the last nonce issued.
+  private nextNonce(): number {
+    const n = Math.max(Date.now(), this.lastNonce + 1);
+    this.lastNonce = n;
+    return n;
   }
 
   private request<T>(method: string, path: string, body?: unknown, authenticated = false): Promise<T> {
@@ -79,7 +89,7 @@ export class BitsoClient {
       };
 
       if (authenticated) {
-        const nonce = Date.now().toString();
+        const nonce = this.nextNonce().toString();
         const message = nonce + method + path + bodyStr;
         const signature = crypto.createHmac('sha256', this.apiSecret).update(message).digest('hex');
         headers['Authorization'] = `Bitso ${this.apiKey}:${nonce}:${signature}`;

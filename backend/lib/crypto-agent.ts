@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { CryptoIndicators } from '@/lib/crypto-indicators';
 import { bitsoClient } from '@/lib/bitso';
-import { getCryptoMarketData } from '@/lib/bitso-market-data';
+import { getCryptoMarketData, recordCryptoPriceSnapshot } from '@/lib/bitso-market-data';
 import { prisma } from '@/lib/prisma';
 import { writeBotLog } from '@/lib/bot-logger';
 
@@ -257,23 +257,32 @@ async function buildCryptoAgentRequestContext(
   const marketData = await getCryptoMarketData(symbol);
   const [baseCurrency, quoteCurrency] = symbol.split('_');
 
-  const [balances, fees, recentTrades] = await Promise.all([
-    bitsoClient.getBalances(),
-    bitsoClient.getFees(),
-    prisma.trade.findMany({
-      where: { market: 'CRYPTO', symbol },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    }),
-  ]);
+  // getBalances/getFees are both authenticated Bitso calls and must not run
+  // concurrently via Promise.all — Bitso requires strictly increasing nonces
+  // per API key, so parallel calls risk colliding/out-of-order nonces and
+  // getting rejected. Serialize them; the unrelated Prisma trade query is
+  // still overlapped for what parallelism remains safe.
+  const tradesPromise = prisma.trade.findMany({
+    where: { market: 'CRYPTO', symbol },
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+  const balances = await bitsoClient.getBalances();
+  const fees = await bitsoClient.getFees();
+  const recentTrades = await tradesPromise;
 
   const baseBalance  = balances.find(b => b.currency === baseCurrency);
   const quoteBalance = balances.find(b => b.currency === quoteCurrency);
   const currentPosition = baseBalance?.total ?? 0;
 
   const bookFee = fees.find(f => f.book === symbol);
-  const feeEstimatePct = config.feeEstimatePct
-    ?? (bookFee ? bookFee.takerFeeDecimal * 100 * 2 : DEFAULT_CRYPTO_FEE_ESTIMATE_PCT);
+  // Live Bitso fee wins whenever the API call succeeded for this book — a
+  // non-null config.feeEstimatePct (it has a DB default) would otherwise
+  // always shadow the real, current fee schedule. Fall back to the config
+  // value, then the constant, only when the live lookup has nothing for this book.
+  const feeEstimatePct = (bookFee ? bookFee.takerFeeDecimal * 100 * 2 : undefined)
+    ?? config.feeEstimatePct
+    ?? DEFAULT_CRYPTO_FEE_ESTIMATE_PCT;
 
   const availableFunds   = quoteBalance?.available ?? 0;
   const effectiveCapital = capitalLimit ? Math.min(availableFunds, capitalLimit) : availableFunds;
@@ -417,6 +426,10 @@ export async function runCryptoAgentCycle(
   const ctx = await buildCryptoAgentRequestContext(symbol, config);
   const { lastPrice, indicators, currentPosition, effectiveCapital } = ctx;
 
+  // Record this cycle's price for the NEXT real cycle's "since last check" comparison.
+  // Runs every real cycle (buy/sell/hold) — never called from previewCryptoAgentRequest.
+  await recordCryptoPriceSnapshot(symbol, ctx.lastPrice);
+
   const message = await anthropic.messages.create(ctx.request);
 
   const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
@@ -461,7 +474,13 @@ export async function runCryptoAgentCycle(
       orderId = await bitsoClient.placeOrder({
         book: symbol,
         side: decision.action,
-        major: decision.quantity.toString(),
+        // Round to 8 decimals to match this feature's display precision
+        // (maxQuantity.toFixed(8) / currentPosition.toFixed(8) in the prompt)
+        // and avoid sending unrounded float precision that exceeds a book's
+        // allowed decimals. Pragmatic MVP simplification — exact per-book
+        // precision would require a live call to Bitso's `available_books`
+        // endpoint, which is not yet integrated.
+        major: decision.quantity.toFixed(8),
       });
       executed = true;
       await writeBotLog({

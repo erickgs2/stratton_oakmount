@@ -32,12 +32,6 @@ export async function getCryptoMarketData(book: string): Promise<CryptoMarketDat
     asks: orderBook.asks,
   });
 
-  // Record this cycle's price for future cycles' "since last check" comparison
-  // — the crypto equivalent of recordLastPrice in trading-context.ts, kept in
-  // its own table since crypto never touches trading-context.ts (see plan
-  // Global Constraints).
-  await prisma.cryptoPriceSnapshot.create({ data: { book, price: ticker.last } });
-
   const previousPrice = ticker.last - ticker.change24;
   const changePct24h = previousPrice !== 0 ? (ticker.change24 / previousPrice) * 100 : 0;
 
@@ -49,4 +43,14 @@ export async function getCryptoMarketData(book: string): Promise<CryptoMarketDat
     low24h: ticker.low,
     indicators,
   };
+}
+
+// Record this cycle's price for future cycles' "since last check" comparison
+// — the crypto equivalent of recordLastPrice in trading-context.ts, kept in
+// its own table since crypto never touches trading-context.ts (see plan
+// Global Constraints). Mutating, so it is called only from the real
+// runCryptoAgentCycle — never from getCryptoMarketData / previewCryptoAgentRequest,
+// which must stay read-only (mirrors peekLastPrice/recordLastPrice in trading-context.ts).
+export async function recordCryptoPriceSnapshot(book: string, price: number): Promise<void> {
+  await prisma.cryptoPriceSnapshot.create({ data: { book, price } });
 }
