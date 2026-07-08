@@ -4,6 +4,7 @@ import { runAgentCycle } from '@/lib/claude-agent';
 import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
 import { isMarketOpen } from '@/lib/market-hours';
+import { Market } from '@/lib/market';
 
 // Module-level interval map — persists across requests in the same server process
 declare global {
@@ -14,7 +15,7 @@ global.botIntervals = global.botIntervals ?? new Map();
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
-    market: 'MX' | 'USA';
+    market: Market;
     symbols: string[];
     capitalLimit: number;
     intervalMin: number;
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     message: `Bot started for ${market} — ${symbols.slice(0, 2).join(', ')}${symbols.length > 2 ? ` (+${symbols.length - 2} more)` : ''}`,
   });
 
-  ibkrClient.startKeepAlive();
+  if (market !== 'CRYPTO') ibkrClient.startKeepAlive();
 
   const intervalKey = `bot-${market}`;
   if (global.botIntervals.has(intervalKey)) {

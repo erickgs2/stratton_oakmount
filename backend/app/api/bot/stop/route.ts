@@ -3,9 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
 import { resetDailyContext } from '@/lib/trading-context';
+import { Market } from '@/lib/market';
 
 export async function POST(request: NextRequest) {
-  const body = await request.json() as { market: 'MX' | 'USA' };
+  const body = await request.json() as { market: Market };
   const { market } = body;
 
   await prisma.botConfig.upsert({
@@ -20,8 +21,10 @@ export async function POST(request: NextRequest) {
     global.botIntervals.delete(intervalKey);
   }
 
-  ibkrClient.stopKeepAlive();
-  await resetDailyContext();
+  if (market !== 'CRYPTO') {
+    ibkrClient.stopKeepAlive();
+    await resetDailyContext();
+  }
 
   await writeBotLog({
     level: 'info',
