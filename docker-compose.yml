@@ -12,6 +12,9 @@ services:
       - IBKR_GATEWAY_URL=${IBKR_GATEWAY_URL}
       - IBKR_ACCOUNT_ID=${IBKR_ACCOUNT_ID}
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:4200}
+      - BITSO_API_KEY=${BITSO_API_KEY}
+      - BITSO_API_SECRET=${BITSO_API_SECRET}
+      - BITSO_API_HOSTNAME=${BITSO_API_HOSTNAME:-api.bitso.com}
 
   web:
     build: ./frontend
