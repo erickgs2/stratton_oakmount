@@ -58,3 +58,12 @@ model AppSettings {
   id            String  @id @default("singleton")
   ibkrAccountId String?
 }
+
+model CryptoPriceSnapshot {
+  id         String   @id @default(cuid())
+  book       String   // Bitso book, e.g. "btc_mxn"
+  price      Float
+  recordedAt DateTime @default(now())
+
+  @@index([book, recordedAt])
+}

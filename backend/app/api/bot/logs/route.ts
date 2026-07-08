@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
-const VALID_MARKETS = ['MX', 'USA'];
+const VALID_MARKETS = ['MX', 'USA', 'CRYPTO'];
 const VALID_LEVELS = ['info', 'warn', 'error'];
 
 export async function GET(request: NextRequest) {

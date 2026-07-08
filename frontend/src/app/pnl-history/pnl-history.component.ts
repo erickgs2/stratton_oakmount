@@ -5,10 +5,12 @@ import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Market } from '../core/models/market.model';
 import { PnlService } from '../core/services/pnl.service';
 import { PnlReport } from '../core/models/pnl.model';
+import { TabPersistenceService } from '../core/services/tab-persistence.service';
 
-type Market = 'MX' | 'USA';
+const PNL_HISTORY_TAB_KEY = 'pnl-history-active-tab';
 
 @Component({
   selector: 'app-pnl-history',
@@ -22,12 +24,25 @@ type Market = 'MX' | 'USA';
   styleUrls: ['./pnl-history.component.scss'],
 })
 export class PnlHistoryComponent implements OnInit {
-  activeMarket: Market = 'MX';
-  reports: { MX: PnlReport | null; USA: PnlReport | null } = { MX: null, USA: null };
+  activeTabIndex: number;
+  activeMarket: Market;
+  reports: { MX: PnlReport | null; USA: PnlReport | null; CRYPTO: PnlReport | null } = { MX: null, USA: null, CRYPTO: null };
   loading = true;
   dayColumns = ['date', 'outcome', 'realizedPnl', 'buys', 'sells', 'holds'];
 
-  constructor(private pnlService: PnlService) {}
+  constructor(
+    private pnlService: PnlService,
+    private tabPersistence: TabPersistenceService,
+  ) {
+    this.activeTabIndex = this.tabPersistence.getSavedIndex(PNL_HISTORY_TAB_KEY, 2);
+    this.activeMarket = this.indexToMarket(this.activeTabIndex);
+  }
+
+  private indexToMarket(index: number): Market {
+    if (index === 0) return 'MX';
+    if (index === 1) return 'USA';
+    return 'CRYPTO';
+  }
 
   ngOnInit(): void {
     this.loadReports();
@@ -35,8 +50,8 @@ export class PnlHistoryComponent implements OnInit {
 
   loadReports(): void {
     this.loading = true;
-    let remaining = 2;
-    (['MX', 'USA'] as const).forEach(market => {
+    let remaining = 3;
+    (['MX', 'USA', 'CRYPTO'] as const).forEach(market => {
       this.pnlService.getReport(market).subscribe({
         next: report => {
           this.reports[market] = report;
@@ -52,7 +67,9 @@ export class PnlHistoryComponent implements OnInit {
   }
 
   onTabChange(index: number): void {
-    this.activeMarket = index === 0 ? 'MX' : 'USA';
+    this.activeTabIndex = index;
+    this.activeMarket = this.indexToMarket(index);
+    this.tabPersistence.saveIndex(PNL_HISTORY_TAB_KEY, index);
   }
 
   get activeReport(): PnlReport | null {

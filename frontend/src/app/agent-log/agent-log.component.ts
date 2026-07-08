@@ -9,6 +9,7 @@ import { Subscription, interval } from 'rxjs';
 import { switchMap, startWith } from 'rxjs/operators';
 import { AgentLogService } from '../core/services/agent-log.service';
 import { AgentLog } from '../core/models/agent-log.model';
+import { Market } from '../core/models/market.model';
 
 @Component({
   selector: 'app-agent-log',
@@ -18,7 +19,7 @@ import { AgentLog } from '../core/models/agent-log.model';
   styleUrls: ['./agent-log.component.scss'],
 })
 export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() market: 'MX' | 'USA' = 'MX';
+  @Input() market: Market = 'MX';
   @Input() isRunning = false;
 
   logs: AgentLog[] = [];
@@ -51,18 +52,30 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
     this.actionFilter = f;
   }
 
-  inputFieldLabels: Record<string, string> = {
-    lastPrice: 'Last Price',
-    changePct: 'Day Change %',
-    volume: 'Volume',
-    rsi14: 'RSI (14)',
-    ma20: 'MA20',
-    ma50: 'MA50',
-    percentChange5d: '5d Change %',
-    volumeRatio: 'Volume Ratio',
-  };
+  get inputFieldLabels(): Record<string, string> {
+    if (this.market === 'CRYPTO') {
+      return {
+        lastPrice: 'Last Price (MXN)',
+        changePctSinceSnapshot: 'Change Since Last Check',
+        orderBookImbalance: 'Order Book Imbalance',
+        spreadPct: 'Bid/Ask Spread',
+      };
+    }
+    return {
+      lastPrice: 'Last Price',
+      changePct: 'Day Change %',
+      volume: 'Volume',
+      rsi14: 'RSI (14)',
+      ma20: 'MA20',
+      ma50: 'MA50',
+      percentChange5d: '5d Change %',
+      volumeRatio: 'Volume Ratio',
+    };
+  }
 
-  readonly inputKeys = Object.keys(this.inputFieldLabels);
+  get inputKeys(): string[] {
+    return Object.keys(this.inputFieldLabels);
+  }
 
   private pollSub: Subscription | null = null;
   private breakpointSub: Subscription | null = null;
@@ -113,16 +126,29 @@ export class AgentLogComponent implements OnInit, OnChanges, OnDestroy {
 
   getFieldValue(log: AgentLog, key: string): string {
     const md = log.marketData;
-    const ind = md?.indicators;
+    const ind = md?.indicators as unknown as Record<string, number | null | undefined> | undefined;
+
+    if (this.market === 'CRYPTO') {
+      const map: Record<string, string> = {
+        lastPrice: md?.lastPrice != null ? `${md.lastPrice.toFixed(2)} MXN` : '—',
+        changePctSinceSnapshot: ind?.['changePctSinceSnapshot'] != null
+          ? `${(ind['changePctSinceSnapshot'] as number) >= 0 ? '+' : ''}${(ind['changePctSinceSnapshot'] as number).toFixed(2)}%`
+          : 'insufficient history yet',
+        orderBookImbalance: ind?.['orderBookImbalance'] != null ? (ind['orderBookImbalance'] as number).toFixed(2) : '—',
+        spreadPct: ind?.['spreadPct'] != null ? `${(ind['spreadPct'] as number).toFixed(3)}%` : '—',
+      };
+      return map[key] ?? '—';
+    }
+
     const map: Record<string, string> = {
       lastPrice: md?.lastPrice != null ? md.lastPrice.toFixed(2) : '—',
       changePct: md?.changePct != null ? `${md.changePct >= 0 ? '+' : ''}${md.changePct.toFixed(2)}%` : '—',
       volume: md?.volume != null ? md.volume.toLocaleString() : '—',
-      rsi14: ind?.rsi14 != null ? ind.rsi14.toFixed(2) : '—',
-      ma20: ind?.ma20 != null ? ind.ma20.toFixed(2) : '—',
-      ma50: ind?.ma50 != null ? ind.ma50.toFixed(2) : '—',
-      percentChange5d: ind?.percentChange5d != null ? `${ind.percentChange5d >= 0 ? '+' : ''}${ind.percentChange5d.toFixed(2)}%` : '—',
-      volumeRatio: ind?.volumeRatio != null ? `${ind.volumeRatio.toFixed(2)}x` : '—',
+      rsi14: ind?.['rsi14'] != null ? (ind['rsi14'] as number).toFixed(2) : '—',
+      ma20: ind?.['ma20'] != null ? (ind['ma20'] as number).toFixed(2) : '—',
+      ma50: ind?.['ma50'] != null ? (ind['ma50'] as number).toFixed(2) : '—',
+      percentChange5d: ind?.['percentChange5d'] != null ? `${(ind['percentChange5d'] as number) >= 0 ? '+' : ''}${(ind['percentChange5d'] as number).toFixed(2)}%` : '—',
+      volumeRatio: ind?.['volumeRatio'] != null ? `${(ind['volumeRatio'] as number).toFixed(2)}x` : '—',
     };
     return map[key] ?? '—';
   }

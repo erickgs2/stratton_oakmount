@@ -4,6 +4,7 @@
     <mat-chip-set>
       <mat-chip [class.active]="activeMarket === 'MX'" (click)="setMarket('MX')">MX — BMV</mat-chip>
       <mat-chip [class.active]="activeMarket === 'USA'" (click)="setMarket('USA')">USA — NYSE/Nasdaq</mat-chip>
+      <mat-chip [class.active]="activeMarket === 'CRYPTO'" (click)="setMarket('CRYPTO')">CRYPTO — Bitso</mat-chip>
     </mat-chip-set>
   </div>
   <app-request-examples></app-request-examples>

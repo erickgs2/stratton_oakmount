@@ -154,3 +154,8 @@ table { width: 100%; }
   gap: 16px;
   margin-top: 16px;
 }
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 24px 0;
+}

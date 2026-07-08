@@ -53,6 +53,16 @@
       </button>
       <img src="assets/branding/AppIcon-512@2x.png" alt="" class="toolbar-brand-icon">
       <span class="toolbar-title">{{ title }}</span>
+      <span class="toolbar-spacer"></span>
+      <div class="ibkr-status">
+        <span class="status-chip" [class.connected]="ibkrConnected$ | async">
+          <mat-icon>{{ (ibkrConnected$ | async) ? 'link' : 'link_off' }}</mat-icon>
+          <span class="status-label">{{ (ibkrConnected$ | async) ? 'IBKR Connected' : 'IBKR Not Connected' }}</span>
+        </span>
+        <button mat-stroked-button color="primary" class="login-btn" *ngIf="!(ibkrConnected$ | async)" (click)="openIbkrLogin()">
+          Login
+        </button>
+      </div>
     </mat-toolbar>
     <div class="page-content">
       <router-outlet />

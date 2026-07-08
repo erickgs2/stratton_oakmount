@@ -6,6 +6,7 @@ import { startWith, switchMap, catchError } from 'rxjs/operators';
 import { BotService } from '../core/services/bot.service';
 import { AgentLogComponent } from '../agent-log/agent-log.component';
 import { RequestExamplesComponent } from '../request-examples/request-examples.component';
+import { Market } from '../core/models/market.model';
 
 @Component({
   selector: 'app-agent-logs-page',
@@ -15,7 +16,7 @@ import { RequestExamplesComponent } from '../request-examples/request-examples.c
   styleUrls: ['./agent-logs-page.component.scss'],
 })
 export class AgentLogsPageComponent implements OnInit, OnDestroy {
-  activeMarket: 'MX' | 'USA' = 'MX';
+  activeMarket: Market = 'MX';
   isRunning = false;
 
   private sub = new Subscription();
@@ -41,7 +42,7 @@ export class AgentLogsPageComponent implements OnInit, OnDestroy {
     this.sub.unsubscribe();
   }
 
-  setMarket(market: 'MX' | 'USA'): void {
+  setMarket(market: Market): void {
     this.activeMarket = market;
     this.loadStatus();
   }

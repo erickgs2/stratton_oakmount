@@ -1,4 +1,4 @@
-import { isBMVOpen, isNYSEOpen, isMarketOpen } from '@/lib/market-hours';
+import { isBMVOpen, isNYSEOpen, isMarketOpen, isCryptoOpen } from '@/lib/market-hours';
 
 // BMV: Mon-Fri 08:30-15:00 America/Mexico_City (UTC-6 standard, UTC-5 daylight)
 // NYSE: Mon-Fri 09:30-16:00 America/New_York (UTC-5 standard, UTC-4 daylight)
@@ -111,5 +111,17 @@ describe('isMarketOpen', () => {
   it('delegates to isNYSEOpen for USA', () => {
     jest.useFakeTimers({ now: new Date('2026-06-29T15:00:00Z') });
     expect(isMarketOpen('USA')).toBe(isNYSEOpen());
+  });
+});
+
+describe('isCryptoOpen', () => {
+  it('is always true regardless of day or time', () => {
+    expect(isCryptoOpen()).toBe(true);
+  });
+});
+
+describe('isMarketOpen with CRYPTO', () => {
+  it('delegates to isCryptoOpen for the CRYPTO market', () => {
+    expect(isMarketOpen('CRYPTO')).toBe(true);
   });
 });

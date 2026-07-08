@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Market } from '@/lib/market';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const raw = searchParams.get('market');
-  if (raw && raw !== 'MX' && raw !== 'USA') {
+  if (raw && raw !== 'MX' && raw !== 'USA' && raw !== 'CRYPTO') {
     return NextResponse.json({ error: 'Invalid market' }, { status: 400 });
   }
-  const market = raw as 'MX' | 'USA' | null;
+  const market = raw as Market | null;
   const limitParam = parseInt(searchParams.get('limit') ?? '50', 10);
   const limit = Number.isNaN(limitParam) ? 50 : Math.min(Math.max(1, limitParam), 500);
 

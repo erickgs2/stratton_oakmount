@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Market } from '@/lib/market';
 
 export async function POST(request: NextRequest) {
   const body = await request.json() as {
-    market: 'MX' | 'USA';
+    market: Market;
     symbols: string[];
     capitalLimit: number;
     intervalMin: number;

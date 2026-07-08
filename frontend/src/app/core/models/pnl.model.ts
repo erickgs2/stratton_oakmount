@@ -1,3 +1,5 @@
+import { Market } from './market.model';
+
 export interface DailyPnlSummary {
   date: string;
   realizedPnl: number;
@@ -8,7 +10,7 @@ export interface DailyPnlSummary {
 }
 
 export interface PnlReport {
-  market: 'MX' | 'USA';
+  market: Market;
   currency: string;
   currentSessionRealizedPnl: number;
   allTimeRealizedPnl: number;

@@ -18,7 +18,7 @@
   </div>
 </mat-card>
 
-<mat-tab-group>
+<mat-tab-group [selectedIndex]="activeTabIndex" (selectedIndexChange)="onTabChange($event)">
   <!-- MX Market Tab -->
   <mat-tab label="MX — BMV">
     <div class="config-section">
@@ -214,6 +214,106 @@
 
         <button mat-raised-button color="primary" (click)="saveConfig('USA')" [disabled]="saving">
           Save USA Configuration
+        </button>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <!-- CRYPTO Market Tab -->
+  <mat-tab label="CRYPTO — Bitso">
+    <div class="config-section">
+      <mat-card class="config-card">
+        <h3>Symbols (Bitso)</h3>
+        <mat-chip-listbox
+          multiple
+          [value]="cryptoConfig.symbols"
+          (change)="onSymbolChange($event, 'CRYPTO')">
+          <mat-chip-option *ngFor="let s of cryptoSymbols" [value]="s">{{ s | uppercase }}</mat-chip-option>
+        </mat-chip-listbox>
+      </mat-card>
+
+      <mat-card class="config-card">
+        <h3>Trading Parameters</h3>
+        <div class="config-grid">
+          <div class="field-block">
+            <h4>
+              Capital Limit per Cycle (MXN)
+              <mat-icon #capitalLimitInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="Maximum cash the bot is allowed to use across all symbols in a single cycle. The 20% rule is applied per symbol on top of this limit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="capitalLimitInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Capital Limit (MXN)</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.capitalLimit" min="100">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Check Frequency
+              <mat-icon #intervalInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="How often the bot re-evaluates this market and may act, in minutes. Crypto trades 24/7, so this runs continuously with no market-hours pause." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="intervalInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Interval (minutes)</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.intervalMin" min="1" max="1440">
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Confidence Threshold
+              <mat-icon #confidenceInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="Claude must reach this confidence level (0.00–1.00) to execute a trade. Lower = more trades, higher = more selective." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="confidenceInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Confidence Threshold</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <mat-hint>Current: {{ cryptoConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Take-Profit Target (%)
+              <mat-icon #takeProfitInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="Target gain on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L reaches this level, unless strong aligned momentum justifies holding longer." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="takeProfitInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Take-Profit (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.takeProfitPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ cryptoConfig.takeProfitPct | number:'1.1-2' }}% — recommended 0.5–2.0% for scalping</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Stop-Loss Threshold (%)
+              <mat-icon #stopLossInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="Maximum acceptable loss on an open position, as a percent. Claude is instructed to prefer selling once a position's unrealized P&L falls to this level, to cut losses quickly." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="stopLossInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Stop-Loss (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.stopLossPct" min="0.2" max="10" step="0.1">
+              <mat-hint>Current: {{ cryptoConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Estimated Round-Trip Fee (%)
+              <mat-icon #feeInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="Approximate combined cost (Bitso taker fees, buy + sell) of a full round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. The bot also checks Bitso's live per-book fee schedule at request time and prefers that over this value when available — this field is the fallback." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="feeInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-form-field appearance="outline">
+              <mat-label>Round-Trip Fee (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="cryptoConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <mat-hint>Current: {{ cryptoConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
+            </mat-form-field>
+          </div>
+        </div>
+      </mat-card>
+
+      <mat-card class="config-card status-card">
+        <mat-slide-toggle [(ngModel)]="cryptoConfig.isActive" color="primary">
+          {{ cryptoConfig.isActive ? 'Active' : 'Inactive' }}
+        </mat-slide-toggle>
+
+        <button mat-raised-button color="primary" (click)="saveConfig('CRYPTO')" [disabled]="saving">
+          Save CRYPTO Configuration
         </button>
       </mat-card>
     </div>

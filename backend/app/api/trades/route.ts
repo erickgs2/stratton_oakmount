@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Market } from '@/lib/market';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const market = searchParams.get('market') as 'MX' | 'USA' | null;
+  const market = searchParams.get('market') as Market | null;
   const symbol = searchParams.get('symbol');
   const from = searchParams.get('from');
 

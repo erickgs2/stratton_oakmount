@@ -1,6 +1,5 @@
 import { isMarketHoliday, getEarlyCloseTime } from '@/lib/market-holidays';
-
-type Market = 'MX' | 'USA';
+import { Market } from '@/lib/market';
 
 function isWeekdayInRange(
   timezone: string,
@@ -8,7 +7,7 @@ function isWeekdayInRange(
   startMinute: number,
   endHour: number,
   endMinute: number,
-  market: Market,
+  market: 'MX' | 'USA',
 ): boolean {
   const now = new Date();
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -51,6 +50,12 @@ export function isNYSEOpen(): boolean {
   return isWeekdayInRange('America/New_York', 9, 30, 16, 0, 'USA');
 }
 
+export function isCryptoOpen(): boolean {
+  return true; // Bitso trades 24/7 — no holiday/weekend/hour restrictions
+}
+
 export function isMarketOpen(market: Market): boolean {
-  return market === 'MX' ? isBMVOpen() : isNYSEOpen();
+  if (market === 'MX') return isBMVOpen();
+  if (market === 'USA') return isNYSEOpen();
+  return isCryptoOpen();
 }

@@ -12,6 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { TradeService, TradeFilters } from '../core/services/trade.service';
 import { Trade } from '../core/models/trade.model';
+import { Market } from '../core/models/market.model';
 
 @Component({
   selector: 'app-trade-log',
@@ -31,7 +32,7 @@ export class TradeLogComponent implements OnInit, OnDestroy {
   isMobile = false;
   mobileDetailMode = false;
 
-  marketFilter: 'MX' | 'USA' | '' = '';
+  marketFilter: Market | '' = '';
   symbolFilter = '';
 
   @ViewChild('filtersDialog') filtersDialogTpl!: TemplateRef<unknown>;
@@ -82,7 +83,7 @@ export class TradeLogComponent implements OnInit, OnDestroy {
   loadTrades(): void {
     this.loading = true;
     const filters: TradeFilters = {
-      ...(this.marketFilter ? { market: this.marketFilter as 'MX' | 'USA' } : {}),
+      ...(this.marketFilter ? { market: this.marketFilter as Market } : {}),
       ...(this.symbolFilter ? { symbol: this.symbolFilter.toUpperCase() } : {}),
     };
     this.tradeService.getTrades(filters).subscribe({

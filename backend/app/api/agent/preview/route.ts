@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const market = searchParams.get('market');
 
-  if (market !== 'MX' && market !== 'USA') {
-    return NextResponse.json({ error: 'market query param must be MX or USA' }, { status: 400 });
+  if (market !== 'MX' && market !== 'USA' && market !== 'CRYPTO') {
+    return NextResponse.json({ error: 'market query param must be MX, USA, or CRYPTO' }, { status: 400 });
   }
 
   try {
