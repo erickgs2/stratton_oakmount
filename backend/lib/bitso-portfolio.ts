@@ -22,10 +22,22 @@ export interface CryptoPortfolio {
 // crypto-agent.ts's computeAvgCostFromTrades, which is out of scope for a
 // simple balances summary.
 export async function getCryptoPortfolio(symbols: string[]): Promise<CryptoPortfolio> {
-  const [balances, tickers] = await Promise.all([
-    bitsoClient.getBalances(),
-    Promise.all(symbols.map(book => bitsoClient.getTicker(book))),
-  ]);
+  // Wrap each call with its own context — getBalances (authenticated) and
+  // getTicker (unauthenticated, per-symbol) fail for entirely different
+  // reasons, and a bare Promise.all merges whichever rejects first into one
+  // opaque message with no way to tell which endpoint or symbol was at fault.
+  const balancesPromise = bitsoClient.getBalances().catch(err => {
+    throw new Error(`getBalances failed: ${(err as Error).message}`);
+  });
+  const tickersPromise = Promise.all(
+    symbols.map(book =>
+      bitsoClient.getTicker(book).catch(err => {
+        throw new Error(`getTicker(${book}) failed: ${(err as Error).message}`);
+      })
+    )
+  );
+
+  const [balances, tickers] = await Promise.all([balancesPromise, tickersPromise]);
 
   const mxnBalance = balances.find(b => b.currency === 'mxn');
   const availableFunds = mxnBalance?.available ?? 0;
