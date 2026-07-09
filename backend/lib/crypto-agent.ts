@@ -69,6 +69,7 @@ interface BuildCryptoUserPromptParams {
   stopLossPct: number;
   feeEstimatePct: number;
   recentTradesText: string;
+  recentPriceSnapshotsText: string;
 }
 
 function buildCryptoUserPrompt(p: BuildCryptoUserPromptParams): string {
@@ -77,6 +78,7 @@ function buildCryptoUserPrompt(p: BuildCryptoUserPromptParams): string {
     currentPosition, currentPositionAvgCost, availableFunds, capitalLimit,
     effectiveCapital, netLiquidation, totalUnrealizedPnl, intervalMin,
     confidenceThreshold, takeProfitPct, stopLossPct, feeEstimatePct, recentTradesText,
+    recentPriceSnapshotsText,
   } = p;
 
   const currency = 'MXN';
@@ -139,6 +141,8 @@ Last Price   : ${lastPrice.toFixed(2)} ${currency}
   Interpretation: near the 24h high = potential resistance/already extended; near the 24h low = potential support/oversold bounce
 Since Last Cycle : ${sinceLastCycleLine}
 Recent Trend      : ${trendLine}
+Recent Price Snapshots (last 15):
+${recentPriceSnapshotsText}
 
 ━━━ ORDER BOOK ━━━
 Order Book Imbalance: ${indicators.orderBookImbalance.toFixed(2)} (-1 = all sell pressure, +1 = all buy pressure) → ${imbalanceLabel}
@@ -325,6 +329,19 @@ async function buildCryptoAgentRequestContext(
         .join('\n')
     : 'RECENT TRADES: none yet for this symbol';
 
+  const recentPriceSnapshots = await prisma.cryptoPriceSnapshot.findMany({
+    where: { book: symbol },
+    orderBy: { recordedAt: 'desc' },
+    take: 15,
+  });
+  const recentPriceSnapshotsText = recentPriceSnapshots.length > 0
+    ? recentPriceSnapshots
+        .slice()
+        .reverse()
+        .map(snapshot => `${snapshot.book} | ${snapshot.price.toFixed(2)} | ${snapshot.recordedAt.toISOString()}`)
+        .join('\n')
+    : 'none yet';
+
   const request: ClaudeRequestBody = {
     model: 'claude-sonnet-4-6',
     max_tokens: 400,
@@ -354,6 +371,7 @@ async function buildCryptoAgentRequestContext(
           stopLossPct,
           feeEstimatePct,
           recentTradesText,
+          recentPriceSnapshotsText,
         }),
       },
     ],
