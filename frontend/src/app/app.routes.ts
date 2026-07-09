@@ -28,6 +28,13 @@ export const routes: Routes = [
       import('./bot-config/bot-config.component').then(m => m.BotConfigComponent),
   },
   {
+    path: 'users',
+    canActivate: [authGuard],
+    data: { requiresPermission: 'canEditConfig' },
+    loadComponent: () =>
+      import('./users/users.component').then(m => m.UsersComponent),
+  },
+  {
     path: 'bot-logs',
     canActivate: [authGuard],
     loadComponent: () =>

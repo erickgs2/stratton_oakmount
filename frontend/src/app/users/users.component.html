@@ -1,0 +1,84 @@
+<h1>User Management</h1>
+
+<p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+<mat-card class="users-card">
+  <table mat-table [dataSource]="users" class="users-table">
+    <ng-container matColumnDef="email">
+      <th mat-header-cell *matHeaderCellDef>Email</th>
+      <td mat-cell *matCellDef="let user">{{ user.email }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="canEditConfig">
+      <th mat-header-cell *matHeaderCellDef>Edit Configuration</th>
+      <td mat-cell *matCellDef="let user">
+        <mat-checkbox [checked]="user.canEditConfig" (change)="togglePermission(user, 'canEditConfig')"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="canManualTrade">
+      <th mat-header-cell *matHeaderCellDef>Manual Trade</th>
+      <td mat-cell *matCellDef="let user">
+        <mat-checkbox [checked]="user.canManualTrade" (change)="togglePermission(user, 'canManualTrade')"></mat-checkbox>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdAt">
+      <th mat-header-cell *matHeaderCellDef>Created</th>
+      <td mat-cell *matCellDef="let user">{{ user.createdAt | date:'medium' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let user">
+        <button mat-icon-button (click)="openResetPasswordDialog(user.id)" aria-label="Reset password" matTooltip="Reset password">
+          <mat-icon>key</mat-icon>
+        </button>
+        <button mat-icon-button (click)="deleteUser(user.id)" aria-label="Delete user" matTooltip="Delete user">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <button mat-raised-button color="primary" (click)="openCreateDialog()">Create User</button>
+</mat-card>
+
+<ng-template #createUserDialogTpl>
+  <h2 mat-dialog-title>Create User</h2>
+  <mat-dialog-content>
+    <form>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" [(ngModel)]="newUser.email" name="email" required>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" [(ngModel)]="newUser.password" name="password" required minlength="8">
+      </mat-form-field>
+      <mat-checkbox [(ngModel)]="newUser.canEditConfig" name="canEditConfig">Edit Configuration</mat-checkbox>
+      <mat-checkbox [(ngModel)]="newUser.canManualTrade" name="canManualTrade">Manual Trade</mat-checkbox>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="createUser()">Create</button>
+  </mat-dialog-actions>
+</ng-template>
+
+<ng-template #resetPasswordDialogTpl>
+  <h2 mat-dialog-title>Reset Password</h2>
+  <mat-dialog-content>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>New Password</mat-label>
+      <input matInput type="password" [(ngModel)]="resetPasswordValue" name="resetPassword" minlength="8">
+    </mat-form-field>
+  </mat-dialog-content>
+  <mat-dialog-actions>
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="submitResetPassword()">Save</button>
+  </mat-dialog-actions>
+</ng-template>

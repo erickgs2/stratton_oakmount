@@ -34,6 +34,10 @@
         <mat-icon matListItemIcon>settings</mat-icon>
         <span matListItemTitle>Bot Config</span>
       </a>
+      <a mat-list-item routerLink="/users" routerLinkActive="active-link" *ngIf="hasPermission('canEditConfig')">
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Users</span>
+      </a>
     </mat-nav-list>
   </mat-sidenav>
 
