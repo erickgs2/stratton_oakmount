@@ -38,7 +38,8 @@ export interface CryptoAgentRequestPreview {
     currency: string;
     orderBookImbalance: number;
     spreadPct: number;
-    changePctSinceSnapshot: number | null;
+    changePctSinceLastCycle: number | null;
+    changePctTrend: number | null;
     capitalLimit: number | null;
     intervalMin: number;
     availableFunds: number;

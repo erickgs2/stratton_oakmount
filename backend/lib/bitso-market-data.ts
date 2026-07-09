@@ -11,7 +11,12 @@ export interface CryptoMarketData {
   indicators: CryptoIndicators;
 }
 
-const SNAPSHOT_LOOKBACK_MIN = 60;
+// 4 hours: wide enough to give calculateCryptoIndicators' "trend" read (see
+// crypto-indicators.ts) a real multi-cycle window to judge momentum from,
+// rather than the ~1 prior cycle a short window would mostly reduce to.
+// The short-term "since last cycle" read comes from the same snapshot set's
+// most recent entry, so one query serves both horizons.
+const SNAPSHOT_LOOKBACK_MIN = 240;
 
 export async function getCryptoMarketData(book: string): Promise<CryptoMarketData> {
   const [ticker, orderBook] = await Promise.all([
