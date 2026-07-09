@@ -53,7 +53,10 @@ export class BotConfigComponent implements OnInit {
   };
   cryptoConfig: Partial<BotConfig> = {
     market: 'CRYPTO', symbols: ['btc_mxn'], capitalLimit: 500, intervalMin: 15,
-    confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.65,
+    // Wider than the stock defaults — crypto routinely moves several percent
+    // within a few hours, so a stock-sized 1% stop gets whipsawed by normal
+    // noise and a 1.5% target barely clears this market's round-trip fee.
+    confidenceThreshold: 0.60, takeProfitPct: 5.0, stopLossPct: 2.5, feeEstimatePct: 0.65,
     tpSlBypassEnabled: false,
   };
 

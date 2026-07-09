@@ -21,18 +21,25 @@ You trade a small, curated list of major coins (e.g. BTC, ETH) against the Mexic
 markets, crypto trades 24/7 with no open/close — expect higher volatility and thinner order books outside
 Mexican business hours.
 
-Your PRIMARY strategy is scalping: take many small, frequent gains of roughly 0.5%-2% per trade rather than
-holding for large moves. Lock in profits early and cut losses quickly — a fast, reliable small win beats a slow,
-uncertain large one. You are expected to complete full buy-then-sell round trips on the same symbol multiple
-times in a single day when the signal supports it.
+Your PRIMARY strategy is scalping, but calibrated to crypto's volatility rather than a stock's: take frequent,
+worthwhile gains rather than holding for one large move, but do not treat a stock-scalping target (a fraction of
+a percent) as the bar here — crypto routinely moves several percent within a few hours. The exact per-trade
+target is set each cycle by the configured take-profit and stop-loss levels below; treat those numbers as
+authoritative, not a fixed range you should assume. Lock in profits at the target and cut losses at the stop
+promptly. You are expected to complete full buy-then-sell round trips on the same symbol multiple times when the
+signal supports it — but each entry still needs a real basis; do not buy simply because capital is available.
 
-You do NOT have access to traditional technical indicators (RSI, moving averages) for crypto — instead you are
-given the price change since the last time this symbol was checked, the order book imbalance (whether buy or
-sell pressure currently dominates), and the bid/ask spread. Use these to judge short-term momentum and whether
-the current spread leaves enough room for a profitable round trip after fees.
+You do NOT have access to traditional technical indicators (RSI, moving averages) for crypto. Instead you are
+given THREE momentum reads at different horizons — a since-last-cycle tick (short, can be noisy on its own),
+a several-hour trend (the more reliable read for judging real direction), and the 24h change plus 24h high/low
+(broader context, and where the price sits relative to recent extremes) — plus the order book imbalance (whether
+buy or sell pressure currently dominates) and the bid/ask spread. Weight the multi-hour trend and order book
+imbalance together as your primary signal; do not act on the short-term tick alone, and be cautious about buying
+very close to the 24h high (already extended) or selling very close to the 24h low (may be a support bounce)
+unless the trend and order flow clearly justify it.
 
-EXCEPTION: you may hold a position longer than the usual scalping target only when order book imbalance and
-recent price momentum both strongly favor continuation. If you decide to deviate from the default scalping
+EXCEPTION: you may hold a position longer than the configured take-profit target only when the multi-hour trend
+and order book imbalance both strongly favor continuation. If you decide to deviate from the default scalping
 behavior and hold for a larger move, you MUST say so explicitly in "reason".
 
 Your goal is to generate consistent returns in Mexican pesos while managing risk tightly on every trade.
@@ -88,9 +95,16 @@ function buildCryptoUserPrompt(p: BuildCryptoUserPromptParams): string {
         : '')
     : 'no current position';
 
-  const sinceSnapshotLine = indicators.changePctSinceSnapshot != null && indicators.minutesSinceSnapshot != null
-    ? `${sign(indicators.changePctSinceSnapshot)}${indicators.changePctSinceSnapshot.toFixed(2)}% over the last ${indicators.minutesSinceSnapshot.toFixed(0)} minutes — short-term momentum`
-    : 'not enough price history yet this hour — treat as a neutral/first read for this symbol';
+  const sinceLastCycleLine = indicators.changePctSinceLastCycle != null && indicators.minutesSinceLastCycle != null
+    ? `${sign(indicators.changePctSinceLastCycle)}${indicators.changePctSinceLastCycle.toFixed(2)}% over the last ${indicators.minutesSinceLastCycle.toFixed(0)} minute${indicators.minutesSinceLastCycle < 1.5 ? '' : 's'} — most recent tick; can be noisy on its own, do not act on this alone`
+    : 'first cycle of the day for this symbol — no prior snapshot yet';
+
+  const trendLine = indicators.changePctSinceSnapshot != null && indicators.minutesSinceSnapshot != null
+    ? `${sign(indicators.changePctSinceSnapshot)}${indicators.changePctSinceSnapshot.toFixed(2)}% over the last ${indicators.minutesSinceSnapshot.toFixed(0)} minutes — the more reliable read for judging real direction; weight this over the single tick above`
+    : 'not enough price history yet — treat as a neutral/first read for this symbol';
+
+  const distFromHigh24h = high24h > 0 ? ((lastPrice - high24h) / high24h) * 100 : 0;
+  const distFromLow24h = low24h > 0 ? ((lastPrice - low24h) / low24h) * 100 : 0;
 
   const imbalanceLabel = indicators.orderBookImbalance > 0.2
     ? 'buy pressure dominates'
@@ -121,8 +135,10 @@ Symbol       : ${symbol}
 Last Price   : ${lastPrice.toFixed(2)} ${currency}
 24h Change   : ${sign(changePct24h)}${changePct24h.toFixed(2)}%
 24h Volume   : ${volume24h.toFixed(4)} ${baseAsset}
-24h High/Low : ${high24h.toFixed(2)} / ${low24h.toFixed(2)} ${currency}
-Since Last Check: ${sinceSnapshotLine}
+24h High/Low : ${high24h.toFixed(2)} / ${low24h.toFixed(2)} ${currency}  → price is ${sign(distFromHigh24h)}${distFromHigh24h.toFixed(1)}% from the 24h high, ${sign(distFromLow24h)}${distFromLow24h.toFixed(1)}% from the 24h low
+  Interpretation: near the 24h high = potential resistance/already extended; near the 24h low = potential support/oversold bounce
+Since Last Cycle : ${sinceLastCycleLine}
+Recent Trend      : ${trendLine}
 
 ━━━ ORDER BOOK ━━━
 Order Book Imbalance: ${indicators.orderBookImbalance.toFixed(2)} (-1 = all sell pressure, +1 = all buy pressure) → ${imbalanceLabel}
@@ -148,7 +164,7 @@ ${tpSlStatusLine}
 
 ━━━ TRADING COSTS ━━━
 Estimated round-trip cost (fees + spread): ~${feeEstimatePct.toFixed(2)}% of trade value (buy + sell combined, Bitso taker fees).
-Rule of thumb: only take a trade if your expected edge is at least 2x this cost (~${(feeEstimatePct * 2).toFixed(2)}%) — otherwise fees can erase a small scalping gain.
+Rule of thumb: only take a trade if your expected edge is at least 2x this cost (~${(feeEstimatePct * 2).toFixed(2)}%) — otherwise fees can erase the gain.
 
 ━━━ TRADING CONTEXT ━━━
 ${recentTradesText}
@@ -160,7 +176,7 @@ ${recentTradesText}
 4. Effective capital limit (${effectiveCapital.toFixed(2)} ${currency}) is a hard ceiling — do not exceed it
 5. If the portfolio is already heavily invested (>80%), prefer hold over adding new positions unless signal is very strong
 6. If you already hold ${symbol}, do not buy more of it right after a recent buy without a genuinely fresh signal. Full buy-then-sell round trips on the same symbol are expected multiple times per day when the signal supports it.
-7. Apply the take-profit and stop-loss levels above: if held and at/above take-profit, prefer sell; if held and at/below stop-loss, prefer sell — unless the EXCEPTION for strong aligned momentum clearly applies (state this explicitly in "reason" if so)
+7. Apply the take-profit and stop-loss levels above: if held and at/above take-profit, prefer sell; if held and at/below stop-loss, prefer sell — unless the EXCEPTION for a strongly aligned multi-hour trend and order book clearly applies (state this explicitly in "reason" if so)
 8. Do not take a buy or sell whose expected edge is smaller than roughly 2x the estimated round-trip trading cost above
 9. Set confidence < ${confidenceThreshold.toFixed(2)} if conditions are ambiguous; the bot will skip execution below the threshold
 
@@ -176,6 +192,19 @@ interface ClaudeRequestBody {
 }
 
 const DEFAULT_CRYPTO_FEE_ESTIMATE_PCT = 0.65; // round-trip fallback if getFees() can't be reached; overridden per-book below when available
+
+// Crypto-specific fallbacks, used only when a market has no saved BotConfig
+// row yet (fresh install / previewCryptoAgentRequest before first save).
+// Wider than the stock defaults (1.5% / 1.0% / 0.65) because crypto
+// routinely moves several percent within a few hours — a stock-sized 1%
+// stop gets whipsawed by ordinary noise before a real move has room to
+// develop, and a 1.5% target barely clears 2x this market's ~0.65%+
+// round-trip taker fee. ~2:1 reward:risk, and a slightly lower confidence
+// bar reflecting that crypto's only signals (order book imbalance, price
+// trend) are inherently noisier than a stock's RSI/MA/volume bundle.
+const DEFAULT_CRYPTO_TAKE_PROFIT_PCT = 5.0;
+const DEFAULT_CRYPTO_STOP_LOSS_PCT = 2.5;
+const DEFAULT_CRYPTO_CONFIDENCE_THRESHOLD = 0.60;
 
 interface TradeForAvgCost {
   action: string;
@@ -244,9 +273,9 @@ async function buildCryptoAgentRequestContext(
   const {
     capitalLimit,
     intervalMin = 15,
-    confidenceThreshold = 0.65,
-    takeProfitPct = 1.5,
-    stopLossPct = 1.0,
+    confidenceThreshold = DEFAULT_CRYPTO_CONFIDENCE_THRESHOLD,
+    takeProfitPct = DEFAULT_CRYPTO_TAKE_PROFIT_PCT,
+    stopLossPct = DEFAULT_CRYPTO_STOP_LOSS_PCT,
   } = config;
 
   const marketData = await getCryptoMarketData(symbol);
@@ -355,7 +384,8 @@ export interface CryptoAgentRequestPreview {
     currency: string;
     orderBookImbalance: number;
     spreadPct: number;
-    changePctSinceSnapshot: number | null;
+    changePctSinceLastCycle: number | null;
+    changePctTrend: number | null;
     capitalLimit: number | null;
     intervalMin: number;
     availableFunds: number;
@@ -377,9 +407,9 @@ export async function previewCryptoAgentRequest(): Promise<CryptoAgentRequestPre
 
   const capitalLimit        = config?.capitalLimit ?? undefined;
   const intervalMin         = config?.intervalMin ?? 15;
-  const confidenceThreshold = config?.confidenceThreshold ?? 0.65;
-  const takeProfitPct       = config?.takeProfitPct ?? 1.5;
-  const stopLossPct         = config?.stopLossPct ?? 1.0;
+  const confidenceThreshold = config?.confidenceThreshold ?? DEFAULT_CRYPTO_CONFIDENCE_THRESHOLD;
+  const takeProfitPct       = config?.takeProfitPct ?? DEFAULT_CRYPTO_TAKE_PROFIT_PCT;
+  const stopLossPct         = config?.stopLossPct ?? DEFAULT_CRYPTO_STOP_LOSS_PCT;
   const feeEstimatePct      = config?.feeEstimatePct ?? undefined;
 
   const ctx = await buildCryptoAgentRequestContext(symbol, {
@@ -396,7 +426,8 @@ export async function previewCryptoAgentRequest(): Promise<CryptoAgentRequestPre
       currency: 'MXN',
       orderBookImbalance: ctx.indicators.orderBookImbalance,
       spreadPct: ctx.indicators.spreadPct,
-      changePctSinceSnapshot: ctx.indicators.changePctSinceSnapshot,
+      changePctSinceLastCycle: ctx.indicators.changePctSinceLastCycle,
+      changePctTrend: ctx.indicators.changePctSinceSnapshot,
       capitalLimit: capitalLimit ?? null,
       intervalMin,
       availableFunds: ctx.availableFunds,
@@ -415,9 +446,9 @@ export async function runCryptoAgentCycle(
   config: CryptoAgentCycleConfig = {},
 ): Promise<AgentCycleResult> {
   const {
-    confidenceThreshold = 0.65,
-    takeProfitPct = 1.5,
-    stopLossPct = 1.0,
+    confidenceThreshold = DEFAULT_CRYPTO_CONFIDENCE_THRESHOLD,
+    takeProfitPct = DEFAULT_CRYPTO_TAKE_PROFIT_PCT,
+    stopLossPct = DEFAULT_CRYPTO_STOP_LOSS_PCT,
     tpSlBypassEnabled = false,
   } = config;
 
