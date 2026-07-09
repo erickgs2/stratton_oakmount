@@ -9,6 +9,7 @@ import { writeBotLog } from '@/lib/bot-logger';
 import { buildContextSection, recordTrade, peekLastPrice, recordLastPrice } from '@/lib/trading-context';
 import { Market } from '@/lib/market';
 import { previewCryptoAgentRequest, runCryptoAgentCycle, CryptoAgentRequestPreview } from '@/lib/crypto-agent';
+import { ClaudeDecision, parseClaudeDecision } from '@/lib/claude-decision-parser';
 
 export interface AgentCycleResult {
   action: 'buy' | 'sell' | 'hold';
@@ -16,13 +17,6 @@ export interface AgentCycleResult {
   confidence: number;
   reason: string;
   executed: boolean;
-}
-
-interface ClaudeDecision {
-  action: 'buy' | 'sell' | 'hold';
-  quantity: number;
-  confidence: number;
-  reason: string;
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -474,14 +468,8 @@ export async function runAgentCycle(
 
   const message = await anthropic.messages.create(ctx.request);
 
-  const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
-  const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-  let decision: ClaudeDecision;
-  try {
-    decision = JSON.parse(cleanText) as ClaudeDecision;
-  } catch {
-    decision = { action: 'hold', quantity: 0, confidence: 0, reason: `Parse error: ${rawText}` };
-  }
+  const rawText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const decision: ClaudeDecision = parseClaudeDecision(rawText);
 
   // Enforce quantity caps server-side after Claude responds
   const maxInvestment = effectiveCapital * 0.20;
