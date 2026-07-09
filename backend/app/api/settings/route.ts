@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ibkrClient } from '@/lib/ibkr';
+import { getAuthContext, requirePermission } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,9 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const denied = requirePermission(getAuthContext(request), 'canEditConfig');
+  if (denied) return denied;
+
   const body = await request.json() as { ibkrAccountId: string };
   const { ibkrAccountId } = body;
 
