@@ -129,6 +129,18 @@
   font-size: 12px;
 }
 
+.auth-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+
+  .user-email {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+}
+
 // Mobile toolbar is already tight (hamburger + 75px brand icon + title) —
 // drop the status text and shrink the chip/button to icon-only-ish so the
 // auth status doesn't force a second row or push the title off-screen.
@@ -144,6 +156,10 @@
   .login-btn {
     min-width: 0;
     padding: 0 10px;
+  }
+
+  .auth-status .user-email {
+    display: none;
   }
 }
 

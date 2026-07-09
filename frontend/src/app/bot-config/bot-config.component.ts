@@ -17,6 +17,7 @@ import { SettingsService } from '../core/services/settings.service';
 import { BotConfig } from '../core/models/bot-config.model';
 import { Market } from '../core/models/market.model';
 import { TabPersistenceService } from '../core/services/tab-persistence.service';
+import { AuthService } from '../core/services/auth.service';
 
 const MX_SYMBOLS = ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'];
 const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
@@ -73,8 +74,13 @@ export class BotConfigComponent implements OnInit {
     private settingsService: SettingsService,
     private snackBar: MatSnackBar,
     private tabPersistence: TabPersistenceService,
+    private authService: AuthService,
   ) {
     this.activeTabIndex = this.tabPersistence.getSavedIndex(BOT_CONFIG_TAB_KEY, 2);
+  }
+
+  get canEdit(): boolean {
+    return this.authService.hasPermission('canEditConfig');
   }
 
   onTabChange(index: number): void {
