@@ -26,6 +26,7 @@ jest.mock('@/lib/prisma', () => ({
   prisma: {
     agentLog: { create: jest.fn() },
     trade: { create: jest.fn(), findMany: jest.fn() },
+    cryptoPriceSnapshot: { findMany: jest.fn() },
   },
 }));
 
@@ -64,6 +65,27 @@ describe('runCryptoAgentCycle — deterministic TP/SL bypass', () => {
     });
     (bitsoClient.getFees as jest.Mock).mockResolvedValue([{ book: 'btc_mxn', takerFeeDecimal: 0.005, makerFeeDecimal: 0.005 }]);
     (bitsoClient.placeOrder as jest.Mock).mockResolvedValue('bitso-order-1');
+    (prisma.cryptoPriceSnapshot.findMany as jest.Mock).mockResolvedValue([
+      { book: 'btc_mxn', price: 1000000, recordedAt: new Date('2026-01-01T00:00:00Z') },
+    ]);
+  });
+
+  it('includes recent price snapshots in the Claude prompt', async () => {
+    (bitsoClient.getBalances as jest.Mock).mockResolvedValue([
+      { currency: 'btc', available: 0, locked: 0, total: 0 },
+      { currency: 'mxn', available: 5000, locked: 0, total: 5000 },
+    ]);
+    (prisma.trade.findMany as jest.Mock).mockResolvedValue([]);
+    mockAnthropicCreate.mockResolvedValue(claudeHoldResponse('no edge', 0.4));
+
+    await runCryptoAgentCycle('btc_mxn', {
+      takeProfitPct: 1.5, stopLossPct: 5.0, tpSlBypassEnabled: true,
+    });
+
+    const promptText = mockAnthropicCreate.mock.calls[0][0].messages[0].content;
+    expect(promptText).toContain('Recent Price Snapshots (last 15)');
+    expect(promptText).toContain('btc_mxn');
+    expect(promptText).toContain('1000000.00');
   });
 
   it('sells without calling Claude when bypass is enabled and P&L is at/above take-profit', async () => {
