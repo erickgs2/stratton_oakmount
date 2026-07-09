@@ -29,6 +29,7 @@ model BotConfig {
   takeProfitPct       Float    @default(1.5)   // percentage points, e.g. 1.5 = 1.5%
   stopLossPct         Float    @default(1.0)   // percentage points, e.g. 1.0 = 1.0%
   feeEstimatePct      Float    @default(0.10)  // neutral fallback; real per-market defaults (MX 0.30 / USA 0.05) applied by app layer + migration backfill
+  tpSlBypassEnabled   Boolean  @default(false) // when true, take-profit/stop-loss exits fire deterministically without a Claude call
   isActive            Boolean  @default(false)
   updatedAt           DateTime @updatedAt
 }

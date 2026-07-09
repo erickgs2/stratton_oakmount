@@ -44,14 +44,17 @@ export class BotConfigComponent implements OnInit {
   mxConfig: Partial<BotConfig> = {
     market: 'MX', symbols: ['AMXL'], capitalLimit: 10000, intervalMin: 15,
     confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.30,
+    tpSlBypassEnabled: false,
   };
   usaConfig: Partial<BotConfig> = {
     market: 'USA', symbols: ['AAPL'], capitalLimit: 1000, intervalMin: 15,
     confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.05,
+    tpSlBypassEnabled: false,
   };
   cryptoConfig: Partial<BotConfig> = {
     market: 'CRYPTO', symbols: ['btc_mxn'], capitalLimit: 500, intervalMin: 15,
     confidenceThreshold: 0.65, takeProfitPct: 1.5, stopLossPct: 1.0, feeEstimatePct: 0.65,
+    tpSlBypassEnabled: false,
   };
 
   saving = false;
@@ -145,6 +148,7 @@ export class BotConfigComponent implements OnInit {
       takeProfitPct: config.takeProfitPct ?? 1.5,
       stopLossPct: config.stopLossPct ?? 1.0,
       feeEstimatePct: config.feeEstimatePct ?? 0.10,
+      tpSlBypassEnabled: config.tpSlBypassEnabled ?? false,
     };
 
     // Always persist the config first, then start/stop the bot if needed

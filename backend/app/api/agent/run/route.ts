@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       takeProfitPct: config?.takeProfitPct ?? 1.5,
       stopLossPct: config?.stopLossPct ?? 1.0,
       feeEstimatePct: config?.feeEstimatePct ?? undefined,
+      tpSlBypassEnabled: config?.tpSlBypassEnabled ?? false,
     });
     return NextResponse.json(result);
   } catch (error) {
