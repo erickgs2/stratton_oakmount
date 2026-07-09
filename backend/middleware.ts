@@ -8,6 +8,10 @@ export const config = {
 const PUBLIC_PATHS = ['/api/auth/login'];
 
 export async function middleware(request: NextRequest) {
+  if (request.method === 'OPTIONS') {
+    return NextResponse.next();
+  }
+
   if (PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
     return NextResponse.next();
   }

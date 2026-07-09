@@ -36,6 +36,12 @@ describe('middleware', () => {
     expect(response.status).toBe(401);
   });
 
+  it('allows an OPTIONS preflight request through without a token', async () => {
+    const request = new NextRequest('http://localhost/api/bot/status', { method: 'OPTIONS' });
+    const response = await middleware(request);
+    expect(response.status).toBe(200);
+  });
+
   it('allows the request through for a valid token', async () => {
     const token = await signToken({ sub: 'u1', email: 'a@b.com', canEditConfig: true, canManualTrade: false });
     const request = new NextRequest('http://localhost/api/bot/status', {
