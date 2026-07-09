@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Market } from '@/lib/market';
+import { getAuthContext, requirePermission } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  const denied = requirePermission(getAuthContext(request), 'canEditConfig');
+  if (denied) return denied;
+
   const body = await request.json() as {
     market: Market;
     symbols: string[];

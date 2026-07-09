@@ -26,6 +26,7 @@
         <h3>Symbols (BMV IPC)</h3>
         <mat-chip-listbox
           multiple
+          [disabled]="!canEdit"
           [value]="mxConfig.symbols"
           (change)="onSymbolChange($event, 'MX')">
           <mat-chip-option *ngFor="let s of mxSymbols" [value]="s">{{ s }}</mat-chip-option>
@@ -42,7 +43,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (MXN)</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.capitalLimit" min="1000">
+              <input matInput type="number" [(ngModel)]="mxConfig.capitalLimit" min="1000" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -53,7 +54,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440">
+              <input matInput type="number" [(ngModel)]="mxConfig.intervalMin" min="1" max="1440" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -64,7 +65,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <input matInput type="number" [(ngModel)]="mxConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05" [disabled]="!canEdit">
               <mat-hint>Current: {{ mxConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
             </mat-form-field>
           </div>
@@ -76,7 +77,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.takeProfitPct" min="0.2" max="10" step="0.1">
+              <input matInput type="number" [(ngModel)]="mxConfig.takeProfitPct" min="0.2" max="10" step="0.1" [disabled]="!canEdit">
               <mat-hint>Current: {{ mxConfig.takeProfitPct | number:'1.1-2' }}% — recommended 0.5–2.0% for scalping</mat-hint>
             </mat-form-field>
           </div>
@@ -88,7 +89,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.stopLossPct" min="0.2" max="10" step="0.1">
+              <input matInput type="number" [(ngModel)]="mxConfig.stopLossPct" min="0.2" max="10" step="0.1" [disabled]="!canEdit">
               <mat-hint>Current: {{ mxConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
             </mat-form-field>
           </div>
@@ -98,7 +99,7 @@
               Deterministic TP/SL Exit
               <mat-icon #tpSlBypassInfoMX="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoMX.toggle()">info_outline</mat-icon>
             </h4>
-            <mat-slide-toggle [(ngModel)]="mxConfig.tpSlBypassEnabled" color="primary">
+            <mat-slide-toggle [(ngModel)]="mxConfig.tpSlBypassEnabled" color="primary" [disabled]="!canEdit">
               {{ mxConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
             </mat-slide-toggle>
           </div>
@@ -110,7 +111,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="mxConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <input matInput type="number" [(ngModel)]="mxConfig.feeEstimatePct" min="0" max="5" step="0.01" [disabled]="!canEdit">
               <mat-hint>Current: {{ mxConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
             </mat-form-field>
           </div>
@@ -118,11 +119,11 @@
       </mat-card>
 
       <mat-card class="config-card status-card">
-        <mat-slide-toggle [(ngModel)]="mxConfig.isActive" color="primary">
+        <mat-slide-toggle [(ngModel)]="mxConfig.isActive" color="primary" [disabled]="!canEdit">
           {{ mxConfig.isActive ? 'Active' : 'Inactive' }}
         </mat-slide-toggle>
 
-        <button mat-raised-button color="primary" (click)="saveConfig('MX')" [disabled]="saving">
+        <button mat-raised-button color="primary" (click)="saveConfig('MX')" [disabled]="saving" *ngIf="canEdit">
           Save MX Configuration
         </button>
       </mat-card>
@@ -136,6 +137,7 @@
         <h3>Symbols (NYSE/Nasdaq)</h3>
         <mat-chip-listbox
           multiple
+          [disabled]="!canEdit"
           [value]="usaConfig.symbols"
           (change)="onSymbolChange($event, 'USA')">
           <mat-chip-option *ngFor="let s of usaSymbols" [value]="s">{{ s }}</mat-chip-option>
@@ -152,7 +154,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (USD)</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.capitalLimit" min="100">
+              <input matInput type="number" [(ngModel)]="usaConfig.capitalLimit" min="100" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -163,7 +165,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440">
+              <input matInput type="number" [(ngModel)]="usaConfig.intervalMin" min="1" max="1440" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -174,7 +176,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <input matInput type="number" [(ngModel)]="usaConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05" [disabled]="!canEdit">
               <mat-hint>Current: {{ usaConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.65–0.75</mat-hint>
             </mat-form-field>
           </div>
@@ -186,7 +188,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.takeProfitPct" min="0.2" max="10" step="0.1">
+              <input matInput type="number" [(ngModel)]="usaConfig.takeProfitPct" min="0.2" max="10" step="0.1" [disabled]="!canEdit">
               <mat-hint>Current: {{ usaConfig.takeProfitPct | number:'1.1-2' }}% — recommended 0.5–2.0% for scalping</mat-hint>
             </mat-form-field>
           </div>
@@ -198,7 +200,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.stopLossPct" min="0.2" max="10" step="0.1">
+              <input matInput type="number" [(ngModel)]="usaConfig.stopLossPct" min="0.2" max="10" step="0.1" [disabled]="!canEdit">
               <mat-hint>Current: {{ usaConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
             </mat-form-field>
           </div>
@@ -208,7 +210,7 @@
               Deterministic TP/SL Exit
               <mat-icon #tpSlBypassInfoUSA="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
-            <mat-slide-toggle [(ngModel)]="usaConfig.tpSlBypassEnabled" color="primary">
+            <mat-slide-toggle [(ngModel)]="usaConfig.tpSlBypassEnabled" color="primary" [disabled]="!canEdit">
               {{ usaConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
             </mat-slide-toggle>
           </div>
@@ -220,7 +222,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="usaConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <input matInput type="number" [(ngModel)]="usaConfig.feeEstimatePct" min="0" max="5" step="0.01" [disabled]="!canEdit">
               <mat-hint>Current: {{ usaConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
             </mat-form-field>
           </div>
@@ -228,11 +230,11 @@
       </mat-card>
 
       <mat-card class="config-card status-card">
-        <mat-slide-toggle [(ngModel)]="usaConfig.isActive" color="primary">
+        <mat-slide-toggle [(ngModel)]="usaConfig.isActive" color="primary" [disabled]="!canEdit">
           {{ usaConfig.isActive ? 'Active' : 'Inactive' }}
         </mat-slide-toggle>
 
-        <button mat-raised-button color="primary" (click)="saveConfig('USA')" [disabled]="saving">
+        <button mat-raised-button color="primary" (click)="saveConfig('USA')" [disabled]="saving" *ngIf="canEdit">
           Save USA Configuration
         </button>
       </mat-card>
@@ -246,6 +248,7 @@
         <h3>Symbols (Bitso)</h3>
         <mat-chip-listbox
           multiple
+          [disabled]="!canEdit"
           [value]="cryptoConfig.symbols"
           (change)="onSymbolChange($event, 'CRYPTO')">
           <mat-chip-option *ngFor="let s of cryptoSymbols" [value]="s">{{ s | uppercase }}</mat-chip-option>
@@ -262,7 +265,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Capital Limit (MXN)</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.capitalLimit" min="100">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.capitalLimit" min="100" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -273,7 +276,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Interval (minutes)</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.intervalMin" min="1" max="1440">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.intervalMin" min="1" max="1440" [disabled]="!canEdit">
             </mat-form-field>
           </div>
 
@@ -284,7 +287,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Confidence Threshold</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.confidenceThreshold" min="0.50" max="0.95" step="0.05" [disabled]="!canEdit">
               <mat-hint>Current: {{ cryptoConfig.confidenceThreshold | number:'1.2-2' }} — recommended 0.55–0.65 for crypto</mat-hint>
             </mat-form-field>
           </div>
@@ -296,7 +299,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Take-Profit (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.takeProfitPct" min="0.2" max="20" step="0.5">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.takeProfitPct" min="0.2" max="20" step="0.5" [disabled]="!canEdit">
               <mat-hint>Current: {{ cryptoConfig.takeProfitPct | number:'1.1-2' }}% — recommended 3–8% for crypto</mat-hint>
             </mat-form-field>
           </div>
@@ -308,7 +311,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Stop-Loss (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.stopLossPct" min="0.2" max="15" step="0.5">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.stopLossPct" min="0.2" max="15" step="0.5" [disabled]="!canEdit">
               <mat-hint>Current: {{ cryptoConfig.stopLossPct | number:'1.1-2' }}% — recommended 1.5–4% for crypto</mat-hint>
             </mat-form-field>
           </div>
@@ -318,7 +321,7 @@
               Deterministic TP/SL Exit
               <mat-icon #tpSlBypassInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoCRYPTO.toggle()">info_outline</mat-icon>
             </h4>
-            <mat-slide-toggle [(ngModel)]="cryptoConfig.tpSlBypassEnabled" color="primary">
+            <mat-slide-toggle [(ngModel)]="cryptoConfig.tpSlBypassEnabled" color="primary" [disabled]="!canEdit">
               {{ cryptoConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
             </mat-slide-toggle>
           </div>
@@ -330,7 +333,7 @@
             </h4>
             <mat-form-field appearance="outline">
               <mat-label>Round-Trip Fee (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="cryptoConfig.feeEstimatePct" min="0" max="5" step="0.01">
+              <input matInput type="number" [(ngModel)]="cryptoConfig.feeEstimatePct" min="0" max="5" step="0.01" [disabled]="!canEdit">
               <mat-hint>Current: {{ cryptoConfig.feeEstimatePct | number:'1.2-2' }}% — approximate, editable</mat-hint>
             </mat-form-field>
           </div>
@@ -338,11 +341,11 @@
       </mat-card>
 
       <mat-card class="config-card status-card">
-        <mat-slide-toggle [(ngModel)]="cryptoConfig.isActive" color="primary">
+        <mat-slide-toggle [(ngModel)]="cryptoConfig.isActive" color="primary" [disabled]="!canEdit">
           {{ cryptoConfig.isActive ? 'Active' : 'Inactive' }}
         </mat-slide-toggle>
 
-        <button mat-raised-button color="primary" (click)="saveConfig('CRYPTO')" [disabled]="saving">
+        <button mat-raised-button color="primary" (click)="saveConfig('CRYPTO')" [disabled]="saving" *ngIf="canEdit">
           Save CRYPTO Configuration
         </button>
       </mat-card>

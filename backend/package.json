@@ -14,13 +14,16 @@
     "@anthropic-ai/sdk": "^0.106.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
     "date-fns-tz": "^3.2.0",
+    "jose": "^5.10.0",
     "next": "14.2.35",
     "pg": "^8.22.0",
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.12",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",
@@ -33,6 +36,7 @@
     "prisma": "^7.8.0",
     "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5"
   }
 }

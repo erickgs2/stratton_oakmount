@@ -30,9 +30,13 @@
         <mat-icon matListItemIcon>account_balance_wallet</mat-icon>
         <span matListItemTitle>P&amp;L History</span>
       </a>
-      <a mat-list-item routerLink="/bot-config" routerLinkActive="active-link">
+      <a mat-list-item routerLink="/bot-config" routerLinkActive="active-link" *ngIf="hasPermission('canEditConfig')">
         <mat-icon matListItemIcon>settings</mat-icon>
         <span matListItemTitle>Bot Config</span>
+      </a>
+      <a mat-list-item routerLink="/users" routerLinkActive="active-link" *ngIf="hasPermission('canEditConfig')">
+        <mat-icon matListItemIcon>group</mat-icon>
+        <span matListItemTitle>Users</span>
       </a>
     </mat-nav-list>
   </mat-sidenav>
@@ -61,6 +65,12 @@
         </span>
         <button mat-stroked-button color="primary" class="login-btn" *ngIf="!(ibkrConnected$ | async)" (click)="openIbkrLogin()">
           Login
+        </button>
+      </div>
+      <div class="auth-status" *ngIf="currentUser$ | async as user">
+        <span class="user-email">{{ user.email }}</span>
+        <button mat-icon-button (click)="logout()" aria-label="Log out" matTooltip="Log out">
+          <mat-icon>logout</mat-icon>
         </button>
       </div>
     </mat-toolbar>

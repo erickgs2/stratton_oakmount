@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { runAgentCycle } from '@/lib/claude-agent';
 import { Market } from '@/lib/market';
+import { getAuthContext, requirePermission } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  const denied = requirePermission(getAuthContext(request), 'canEditConfig');
+  if (denied) return denied;
+
   const body = await request.json() as { symbol: string; market: Market };
   const { symbol, market } = body;
 

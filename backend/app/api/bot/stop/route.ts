@@ -4,8 +4,12 @@ import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
 import { resetDailyContext } from '@/lib/trading-context';
 import { Market } from '@/lib/market';
+import { getAuthContext, requirePermission } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  const denied = requirePermission(getAuthContext(request), 'canEditConfig');
+  if (denied) return denied;
+
   const body = await request.json() as { market: Market };
   const { market } = body;
 

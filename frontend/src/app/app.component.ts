@@ -6,11 +6,13 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { Observable } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { IbkrAuthService } from './core/services/ibkr-auth.service';
+import { AuthService, AuthUser } from './core/services/auth.service';
 import { IbkrAuthGateComponent } from './ibkr-auth-gate/ibkr-auth-gate.component';
 import { MobileGestureDirective } from './shared/mobile-gesture.directive';
 
@@ -22,6 +24,7 @@ import { MobileGestureDirective } from './shared/mobile-gesture.directive';
     RouterOutlet, RouterLink, RouterLinkActive,
     MatSidenavModule, MatToolbarModule, MatListModule,
     MatIconModule, MatButtonModule, MatProgressSpinnerModule,
+    MatTooltipModule,
     IbkrAuthGateComponent,
     MobileGestureDirective,
   ],
@@ -37,13 +40,16 @@ export class AppComponent implements OnInit {
   @ViewChild('sidenav') sidenav!: MatSidenav;
 
   protected ibkrConnected$: Observable<boolean>;
+  protected currentUser$: Observable<AuthUser | null>;
 
   constructor(
     private breakpointObserver: BreakpointObserver,
     private router: Router,
     private ibkrAuthService: IbkrAuthService,
+    private authService: AuthService,
   ) {
     this.ibkrConnected$ = this.ibkrAuthService.connected$;
+    this.currentUser$ = this.authService.currentUser$;
   }
 
   ngOnInit(): void {
@@ -56,6 +62,7 @@ export class AppComponent implements OnInit {
       }
     });
     this.ibkrAuthService.startPolling();
+    this.authService.restoreSession().subscribe();
   }
 
   onPullChange(px: number): void {
@@ -74,5 +81,14 @@ export class AppComponent implements OnInit {
 
   openIbkrLogin(): void {
     this.ibkrAuthService.openLoginModal();
+  }
+
+  logout(): void {
+    this.authService.logout();
+    this.router.navigateByUrl('/login');
+  }
+
+  hasPermission(permission: 'canEditConfig' | 'canManualTrade'): boolean {
+    return this.authService.hasPermission(permission);
   }
 }

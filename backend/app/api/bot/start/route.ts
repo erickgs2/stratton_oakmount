@@ -5,6 +5,7 @@ import { ibkrClient } from '@/lib/ibkr';
 import { writeBotLog } from '@/lib/bot-logger';
 import { isMarketOpen } from '@/lib/market-hours';
 import { Market } from '@/lib/market';
+import { getAuthContext, requirePermission } from '@/lib/auth';
 
 // Module-level interval map — persists across requests in the same server process
 declare global {
@@ -14,6 +15,9 @@ declare global {
 global.botIntervals = global.botIntervals ?? new Map();
 
 export async function POST(request: NextRequest) {
+  const denied = requirePermission(getAuthContext(request), 'canEditConfig');
+  if (denied) return denied;
+
   const body = await request.json() as {
     market: Market;
     symbols: string[];
