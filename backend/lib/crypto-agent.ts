@@ -234,6 +234,7 @@ interface CryptoAgentCycleConfig {
   takeProfitPct?: number;
   stopLossPct?: number;
   feeEstimatePct?: number;
+  tpSlBypassEnabled?: boolean;
 }
 
 async function buildCryptoAgentRequestContext(
@@ -415,14 +416,97 @@ export async function runCryptoAgentCycle(
 ): Promise<AgentCycleResult> {
   const {
     confidenceThreshold = 0.65,
+    takeProfitPct = 1.5,
+    stopLossPct = 1.0,
+    tpSlBypassEnabled = false,
   } = config;
 
   const ctx = await buildCryptoAgentRequestContext(symbol, config);
-  const { lastPrice, indicators, currentPosition, effectiveCapital } = ctx;
+  const { lastPrice, indicators, currentPosition, currentAvgCost, effectiveCapital } = ctx;
 
   // Record this cycle's price for the NEXT real cycle's "since last check" comparison.
   // Runs every real cycle (buy/sell/hold) — never called from previewCryptoAgentRequest.
   await recordCryptoPriceSnapshot(symbol, ctx.lastPrice);
+
+  // Deterministic TP/SL bypass — see the matching block in claude-agent.ts's
+  // runAgentCycle for the full rationale. Sells the whole position via Bitso
+  // directly, skipping the Claude call, whenever unrealized P&L has clearly
+  // reached the take-profit or stop-loss level. Opt-in per market via
+  // BotConfig.tpSlBypassEnabled.
+  if (tpSlBypassEnabled && currentPosition > 0 && currentAvgCost > 0) {
+    const unrealizedPnlPct = ((lastPrice - currentAvgCost) / currentAvgCost) * 100;
+    const trigger: 'take-profit' | 'stop-loss' | null =
+      unrealizedPnlPct >= takeProfitPct ? 'take-profit' :
+      unrealizedPnlPct <= -stopLossPct  ? 'stop-loss' :
+      null;
+
+    if (trigger) {
+      const targetLabel = trigger === 'take-profit' ? `+${takeProfitPct.toFixed(2)}%` : `-${stopLossPct.toFixed(2)}%`;
+      const reason = `Deterministic ${trigger} bypass: unrealized P&L ${sign(unrealizedPnlPct)}${unrealizedPnlPct.toFixed(2)}% vs ${targetLabel} target — sold without a Claude call.`;
+      const decision: ClaudeDecision = { action: 'sell', quantity: currentPosition, confidence: 1, reason };
+
+      let executed = false;
+      let orderId: string | undefined;
+      try {
+        orderId = await bitsoClient.placeOrder({ book: symbol, side: 'sell', major: currentPosition.toFixed(8) });
+        executed = true;
+        await writeBotLog({
+          level: 'info',
+          event: 'order_placed',
+          market: 'CRYPTO',
+          symbol,
+          message: `${symbol} SELL x${currentPosition} @ ${lastPrice.toFixed(2)} MXN — order #${orderId} (${trigger} bypass, no Claude call)`,
+        });
+      } catch (err) {
+        await writeBotLog({
+          level: 'warn',
+          event: 'order_skipped',
+          market: 'CRYPTO',
+          symbol,
+          message: `${symbol} SELL x${currentPosition} — Bitso rejected: ${(err as Error).message} (${trigger} bypass)`,
+          meta: { action: 'sell', quantity: currentPosition, bypass: true, trigger },
+        });
+      }
+
+      await prisma.agentLog.create({
+        data: {
+          symbol,
+          market: 'CRYPTO',
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          marketData: JSON.parse(JSON.stringify({ lastPrice, indicators })),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          response: JSON.parse(JSON.stringify(decision)),
+          executed,
+        },
+      });
+
+      await writeBotLog({
+        level: 'info',
+        event: 'cycle_complete',
+        market: 'CRYPTO',
+        symbol,
+        message: `${symbol} → SELL x${currentPosition} (${trigger} bypass, no Claude call)${executed ? ` — executed (order #${orderId ?? ''})` : ' — order skipped'}`,
+        meta: { action: 'sell', quantity: currentPosition, bypass: true, trigger, executed },
+      });
+
+      if (executed) {
+        await prisma.trade.create({
+          data: {
+            symbol,
+            market: 'CRYPTO',
+            action: 'sell',
+            quantity: currentPosition,
+            price: lastPrice,
+            currency: 'MXN',
+            reason,
+            ibkrOrderId: orderId,
+          },
+        });
+      }
+
+      return { ...decision, executed };
+    }
+  }
 
   const message = await anthropic.messages.create(ctx.request);
 

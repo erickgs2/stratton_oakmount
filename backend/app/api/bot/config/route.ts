@@ -12,21 +12,22 @@ export async function POST(request: NextRequest) {
     takeProfitPct: number;
     stopLossPct: number;
     feeEstimatePct: number;
+    tpSlBypassEnabled: boolean;
   };
   const {
     market, symbols, capitalLimit, intervalMin, confidenceThreshold,
-    takeProfitPct, stopLossPct, feeEstimatePct,
+    takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled,
   } = body;
 
   const config = await prisma.botConfig.upsert({
     where: { market },
     create: {
       market, symbols, capitalLimit, intervalMin, confidenceThreshold,
-      takeProfitPct, stopLossPct, feeEstimatePct, isActive: false,
+      takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled: tpSlBypassEnabled ?? false, isActive: false,
     },
     update: {
       symbols, capitalLimit, intervalMin, confidenceThreshold,
-      takeProfitPct, stopLossPct, feeEstimatePct,
+      takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled: tpSlBypassEnabled ?? false,
     },
   });
 

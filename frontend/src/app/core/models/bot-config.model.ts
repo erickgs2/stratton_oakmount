@@ -10,6 +10,7 @@ export interface BotConfig {
   takeProfitPct: number;
   stopLossPct: number;
   feeEstimatePct: number;
+  tpSlBypassEnabled: boolean;
   isActive: boolean;
   updatedAt: string;
 }

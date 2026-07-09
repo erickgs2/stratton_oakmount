@@ -66,6 +66,7 @@ export interface AgentCycleConfig {
   takeProfitPct?: number;
   stopLossPct?: number;
   feeEstimatePct?: number;
+  tpSlBypassEnabled?: boolean;
 }
 
 const DEFAULT_FEE_ESTIMATE_PCT: Record<'MX' | 'USA', number> = { MX: 0.30, USA: 0.05 };
@@ -434,6 +435,71 @@ export async function previewAgentRequest(market: Market): Promise<AgentRequestP
   };
 }
 
+interface PlaceAndRecordOrderParams {
+  symbol: string;
+  market: 'MX' | 'USA';
+  action: 'buy' | 'sell';
+  quantity: number;
+  lastPrice: number;
+  positions: Awaited<ReturnType<typeof ibkrClient.getPositions>>;
+}
+
+// Shared by the Claude-driven execution path and the deterministic TP/SL
+// bypass path below — both need the exact same conid lookup, order
+// placement, and order-outcome logging, just with a decision that came
+// from a different source.
+async function placeAndRecordOrder(params: PlaceAndRecordOrderParams): Promise<{ executed: boolean; ibkrOrderId?: string }> {
+  const { symbol, market, action, quantity, lastPrice, positions } = params;
+  const exchange = market === 'MX' ? 'BMV' : 'SMART';
+
+  let conid: number | undefined = positions.find(p => p.ticker === symbol)?.conid;
+  if (!conid && action === 'buy') {
+    const found = await ibkrClient.searchConid(symbol, exchange);
+    conid = found ?? undefined;
+  }
+
+  if (!conid) {
+    await writeBotLog({
+      level: 'warn',
+      event: 'order_skipped',
+      market,
+      symbol,
+      message: `${symbol} ${action.toUpperCase()} signal skipped — contract not found on IBKR (conid lookup failed)`,
+    });
+    return { executed: false };
+  }
+
+  const ibkrOrderId = await ibkrClient.placeOrder({ conid, side: action === 'buy' ? 'BUY' : 'SELL', quantity, market });
+
+  if (!ibkrOrderId) {
+    await writeBotLog({
+      level: 'warn',
+      event: 'order_skipped',
+      market,
+      symbol,
+      message: `${symbol} ${action.toUpperCase()} x${quantity} — IBKR rejected (no order ID). conid ${conid} may not be tradeable on ${exchange}.`,
+      meta: { conid, action, quantity },
+    });
+    return { executed: false };
+  }
+
+  await recordTrade({
+    symbol,
+    action: action === 'buy' ? 'BUY' : 'SELL',
+    quantity,
+    price: lastPrice,
+    orderId: ibkrOrderId,
+  });
+  await writeBotLog({
+    level: 'info',
+    event: 'order_placed',
+    market,
+    symbol,
+    message: `${symbol} ${action.toUpperCase()} x${quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
+  });
+  return { executed: true, ibkrOrderId };
+}
+
 export async function runAgentCycle(
   symbol: string,
   market: Market,
@@ -448,6 +514,7 @@ export async function runAgentCycle(
     takeProfitPct = 1.5,
     stopLossPct = 1.0,
     feeEstimatePct = DEFAULT_FEE_ESTIMATE_PCT[market],
+    tpSlBypassEnabled = false,
   } = config;
 
   if (!isMarketOpen(market)) {
@@ -459,12 +526,76 @@ export async function runAgentCycle(
   });
   const {
     lastPrice, changePct, volume, indicators,
-    currentPosition, effectiveCapital, positions,
+    currentPosition, currentAvgCost, effectiveCapital, positions,
   } = ctx;
 
   // Record this cycle's price for the NEXT real cycle's "since last cycle" comparison.
   // Runs every real cycle (buy/sell/hold) — never called from previewAgentRequest.
   await recordLastPrice(symbol, lastPrice);
+
+  // Deterministic TP/SL bypass: when enabled (BotConfig.tpSlBypassEnabled) and
+  // this position's unrealized P&L has clearly reached the take-profit or
+  // stop-loss level, sell immediately using the same arithmetic Claude is
+  // normally just handed pre-computed (see tpSlStatusLine in buildUserPrompt)
+  // — skipping the Claude call entirely. This trades away Claude's "hold
+  // longer on aligned momentum" exception for lower cost and faster reaction;
+  // leave the flag off to keep that judgment call with the AI on every cycle.
+  if (tpSlBypassEnabled && currentPosition > 0 && currentAvgCost > 0) {
+    const unrealizedPnlPct = ((lastPrice - currentAvgCost) / currentAvgCost) * 100;
+    const trigger: 'take-profit' | 'stop-loss' | null =
+      unrealizedPnlPct >= takeProfitPct ? 'take-profit' :
+      unrealizedPnlPct <= -stopLossPct  ? 'stop-loss' :
+      null;
+
+    if (trigger) {
+      const targetLabel = trigger === 'take-profit' ? `+${takeProfitPct.toFixed(2)}%` : `-${stopLossPct.toFixed(2)}%`;
+      const reason = `Deterministic ${trigger} bypass: unrealized P&L ${sign(unrealizedPnlPct)}${unrealizedPnlPct.toFixed(2)}% vs ${targetLabel} target — sold without a Claude call.`;
+      const decision: ClaudeDecision = { action: 'sell', quantity: currentPosition, confidence: 1, reason };
+
+      const { executed, ibkrOrderId } = await placeAndRecordOrder({
+        symbol, market, action: 'sell', quantity: currentPosition, lastPrice, positions,
+      });
+
+      const marketData = { lastPrice, changePct, volume, indicators };
+      await prisma.agentLog.create({
+        data: {
+          symbol,
+          market,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          marketData: JSON.parse(JSON.stringify(marketData)),
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          response: JSON.parse(JSON.stringify(decision)),
+          executed,
+        },
+      });
+
+      await writeBotLog({
+        level: 'info',
+        event: 'cycle_complete',
+        market,
+        symbol,
+        message: `${symbol} → SELL x${currentPosition} (${trigger} bypass, no Claude call)${executed ? ` — executed (order #${ibkrOrderId ?? ''})` : ' — order skipped'}`,
+        meta: { action: 'sell', quantity: currentPosition, bypass: true, trigger, executed },
+      });
+
+      if (executed) {
+        await prisma.trade.create({
+          data: {
+            symbol,
+            market,
+            action: 'sell',
+            quantity: currentPosition,
+            price: lastPrice,
+            currency: market === 'MX' ? 'MXN' : 'USD',
+            reason,
+            ibkrOrderId,
+          },
+        });
+      }
+
+      return { ...decision, executed };
+    }
+  }
 
   const message = await anthropic.messages.create(ctx.request);
 
@@ -502,57 +633,11 @@ export async function runAgentCycle(
     decision.confidence >= confidenceThreshold &&
     decision.quantity > 0
   ) {
-    const exchange = market === 'MX' ? 'BMV' : 'SMART';
-
-    let conid: number | undefined = positions.find(p => p.ticker === symbol)?.conid;
-    if (!conid && decision.action === 'buy') {
-      const found = await ibkrClient.searchConid(symbol, exchange);
-      conid = found ?? undefined;
-    }
-
-    if (conid) {
-      ibkrOrderId = await ibkrClient.placeOrder({
-        conid,
-        side: decision.action === 'buy' ? 'BUY' : 'SELL',
-        quantity: decision.quantity,
-        market,
-      });
-
-      if (ibkrOrderId) {
-        executed = true;
-        await recordTrade({
-          symbol,
-          action: decision.action === 'buy' ? 'BUY' : 'SELL',
-          quantity: decision.quantity,
-          price: lastPrice,
-          orderId: ibkrOrderId,
-        });
-        await writeBotLog({
-          level: 'info',
-          event: 'order_placed',
-          market,
-          symbol,
-          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} @ ${lastPrice.toFixed(2)} ${market === 'MX' ? 'MXN' : 'USD'} — order #${ibkrOrderId}`,
-        });
-      } else {
-        await writeBotLog({
-          level: 'warn',
-          event: 'order_skipped',
-          market,
-          symbol,
-          message: `${symbol} ${decision.action.toUpperCase()} x${decision.quantity} — IBKR rejected (no order ID). conid ${conid} may not be tradeable on ${market === 'MX' ? 'BMV' : 'SMART'}.`,
-          meta: { conid, action: decision.action, quantity: decision.quantity },
-        });
-      }
-    } else {
-      await writeBotLog({
-        level: 'warn',
-        event: 'order_skipped',
-        market,
-        symbol,
-        message: `${symbol} ${decision.action.toUpperCase()} signal skipped — contract not found on IBKR (conid lookup failed)`,
-      });
-    }
+    const result = await placeAndRecordOrder({
+      symbol, market, action: decision.action, quantity: decision.quantity, lastPrice, positions,
+    });
+    executed = result.executed;
+    ibkrOrderId = result.ibkrOrderId;
   }
 
   await prisma.agentLog.create({

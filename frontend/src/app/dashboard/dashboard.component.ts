@@ -205,6 +205,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           takeProfitPct: config.takeProfitPct ?? 1.5,
           stopLossPct: config.stopLossPct ?? 1.0,
           feeEstimatePct: config.feeEstimatePct,
+          tpSlBypassEnabled: config.tpSlBypassEnabled ?? false,
         }).subscribe(() => this.loadBotStatus())
       );
     } else {

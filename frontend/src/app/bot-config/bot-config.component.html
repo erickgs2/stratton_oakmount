@@ -95,6 +95,16 @@
 
           <div class="field-block">
             <h4>
+              Deterministic TP/SL Exit
+              <mat-icon #tpSlBypassInfoMX="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoMX.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-slide-toggle [(ngModel)]="mxConfig.tpSlBypassEnabled" color="primary">
+              {{ mxConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
+            </mat-slide-toggle>
+          </div>
+
+          <div class="field-block">
+            <h4>
               Estimated Round-Trip Fee (%)
               <mat-icon #feeInfoMX="matTooltip" class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. Claude avoids trades whose expected edge is too small to clear this cost. BMV round-trip costs are typically higher than IBKR Lite's near-zero US commissions — this figure is an approximation; adjust it if you confirm different pricing with IBKR." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="feeInfoMX.toggle()">info_outline</mat-icon>
             </h4>
@@ -195,6 +205,16 @@
 
           <div class="field-block">
             <h4>
+              Deterministic TP/SL Exit
+              <mat-icon #tpSlBypassInfoUSA="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoUSA.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-slide-toggle [(ngModel)]="usaConfig.tpSlBypassEnabled" color="primary">
+              {{ usaConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
+            </mat-slide-toggle>
+          </div>
+
+          <div class="field-block">
+            <h4>
               Estimated Round-Trip Fee (%)
               <mat-icon #feeInfoUSA="matTooltip" class="field-info-icon" matTooltip="Approximate combined cost (commission + spread) of a full buy-then-sell round trip, as a percent of trade value. IBKR Lite gives $0 commission on US-listed stocks, so this should mainly cover spread — keep it near-zero unless you trade less liquid names." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="feeInfoUSA.toggle()">info_outline</mat-icon>
             </h4>
@@ -291,6 +311,16 @@
               <input matInput type="number" [(ngModel)]="cryptoConfig.stopLossPct" min="0.2" max="10" step="0.1">
               <mat-hint>Current: {{ cryptoConfig.stopLossPct | number:'1.1-2' }}% — recommended 0.5–1.5%</mat-hint>
             </mat-form-field>
+          </div>
+
+          <div class="field-block">
+            <h4>
+              Deterministic TP/SL Exit
+              <mat-icon #tpSlBypassInfoCRYPTO="matTooltip" class="field-info-icon" matTooltip="When on, take-profit and stop-loss exits fire immediately using this position's live P&L, without spending a Claude call — saves tokens and reacts faster. It skips Claude's judgment call to occasionally hold a winning position longer on strong aligned momentum. Leave off to have Claude decide every exit." matTooltipPosition="above" matTooltipTouchGestures="off" aria-label="Field info" (click)="tpSlBypassInfoCRYPTO.toggle()">info_outline</mat-icon>
+            </h4>
+            <mat-slide-toggle [(ngModel)]="cryptoConfig.tpSlBypassEnabled" color="primary">
+              {{ cryptoConfig.tpSlBypassEnabled ? 'Bypass enabled — saves tokens' : 'Claude decides every exit' }}
+            </mat-slide-toggle>
           </div>
 
           <div class="field-block">

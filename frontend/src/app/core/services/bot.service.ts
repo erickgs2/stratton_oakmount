@@ -14,6 +14,7 @@ export interface StartBotPayload {
   takeProfitPct: number;
   stopLossPct: number;
   feeEstimatePct: number;
+  tpSlBypassEnabled: boolean;
 }
 
 export interface BotStatusResponse {

@@ -23,21 +23,22 @@ export async function POST(request: NextRequest) {
     takeProfitPct: number;
     stopLossPct: number;
     feeEstimatePct: number;
+    tpSlBypassEnabled: boolean;
   };
   const {
     market, symbols, capitalLimit, intervalMin, confidenceThreshold,
-    takeProfitPct, stopLossPct, feeEstimatePct,
+    takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled,
   } = body;
 
   const config = await prisma.botConfig.upsert({
     where: { market },
     create: {
       market, symbols, capitalLimit, intervalMin, confidenceThreshold,
-      takeProfitPct, stopLossPct, feeEstimatePct, isActive: true,
+      takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled: tpSlBypassEnabled ?? false, isActive: true,
     },
     update: {
       symbols, capitalLimit, intervalMin, confidenceThreshold,
-      takeProfitPct, stopLossPct, feeEstimatePct, isActive: true,
+      takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled: tpSlBypassEnabled ?? false, isActive: true,
     },
   });
 
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       try {
         await runAgentCycle(symbol, market, {
           capitalLimit, confidenceThreshold, intervalMin,
-          takeProfitPct, stopLossPct, feeEstimatePct,
+          takeProfitPct, stopLossPct, feeEstimatePct, tpSlBypassEnabled,
         });
       } catch (err) {
         console.error(`[Bot] Agent cycle error for ${symbol}:`, (err as Error).message);
