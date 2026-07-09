@@ -15,7 +15,9 @@
 
   <div *ngIf="error && !loading" class="chart-error">No data</div>
 
-  <svg *ngIf="!loading && !error && data" [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none">
+  <div *ngIf="!loading && !error && data && !hasEnoughHistory" class="chart-error">Accumulating price history…</div>
+
+  <svg *ngIf="!loading && !error && data && hasEnoughHistory" [attr.viewBox]="'0 0 ' + W + ' ' + H" preserveAspectRatio="none">
     <defs>
       <linearGradient [id]="symbol + '-grad'" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" [attr.stop-color]="data.changePct >= 0 ? '#4caf50' : '#f44336'" stop-opacity="0.25"/>
@@ -27,8 +29,8 @@
       [attr.stroke]="data.changePct >= 0 ? '#4caf50' : '#f44336'"/>
   </svg>
 
-  <div *ngIf="!loading && !error && data" class="chart-footer">
+  <div *ngIf="!loading && !error && data && hasEnoughHistory" class="chart-footer">
     <span class="range">{{ minPrice | number:'1.2-2' }} – {{ maxPrice | number:'1.2-2' }}</span>
-    <span class="label">60d</span>
+    <span class="label">{{ market === 'CRYPTO' ? 'since start' : '60d' }}</span>
   </div>
 </div>

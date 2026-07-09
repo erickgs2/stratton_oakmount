@@ -238,6 +238,17 @@
     </mat-card>
   </div>
 
+  <div *ngIf="activeSymbols.length > 0" class="charts-section">
+    <h2>Crypto Charts</h2>
+    <div class="charts-row">
+      <app-symbol-chart
+        *ngFor="let sym of activeSymbols"
+        [symbol]="sym"
+        [market]="activeMarket">
+      </app-symbol-chart>
+    </div>
+  </div>
+
   <h2 *ngIf="cryptoPortfolio">Crypto Holdings</h2>
   <div class="table-scroll" *ngIf="cryptoPortfolio && cryptoPortfolio.positions.length > 0">
     <table mat-table [dataSource]="cryptoPortfolio.positions">

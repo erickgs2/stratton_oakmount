@@ -19,4 +19,9 @@ export class MarketDataService {
     const params = new HttpParams().set('symbol', symbol);
     return this.http.get<MXMarketData>(`${this.apiUrl}/market-data/usa`, { params });
   }
+
+  getCryptoData(symbol: string): Observable<MXMarketData> {
+    const params = new HttpParams().set('symbol', symbol);
+    return this.http.get<MXMarketData>(`${this.apiUrl}/market-data/crypto`, { params });
+  }
 }
