@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAuthContext, requirePermission, hasAnotherConfigEditor } from '@/lib/auth';
+import { getAuthContext, requirePermission } from '@/lib/auth';
+import { hasAnotherConfigEditor } from '@/lib/auth-db';
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   const denied = requirePermission(getAuthContext(request), 'canEditConfig');

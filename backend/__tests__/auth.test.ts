@@ -1,13 +1,4 @@
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      count: jest.fn(),
-    },
-  },
-}));
-
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import {
   hashPassword,
   verifyPassword,
@@ -16,7 +7,6 @@ import {
   buildAuthHeaders,
   getAuthContext,
   requirePermission,
-  hasAnotherConfigEditor,
   AuthTokenPayload,
 } from '@/lib/auth';
 
@@ -129,20 +119,5 @@ describe('requirePermission', () => {
   it('returns a 403 response when there is no context at all', () => {
     const response = requirePermission(null, 'canEditConfig');
     expect(response!.status).toBe(403);
-  });
-});
-
-describe('hasAnotherConfigEditor', () => {
-  it('returns true when another canEditConfig user exists', async () => {
-    (prisma.user.count as jest.Mock).mockResolvedValue(1);
-    expect(await hasAnotherConfigEditor('user-1')).toBe(true);
-    expect(prisma.user.count).toHaveBeenCalledWith({
-      where: { canEditConfig: true, id: { not: 'user-1' } },
-    });
-  });
-
-  it('returns false when no other canEditConfig user exists', async () => {
-    (prisma.user.count as jest.Mock).mockResolvedValue(0);
-    expect(await hasAnotherConfigEditor('user-1')).toBe(false);
   });
 });

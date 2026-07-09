@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SignJWT, jwtVerify } from 'jose';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
 
 const SALT_ROUNDS = 10;
 
@@ -94,13 +93,4 @@ export function requirePermission(
     return NextResponse.json({ error: 'Forbidden — insufficient permission' }, { status: 403 });
   }
   return null;
-}
-
-// Used by the user-management routes to enforce that removing or demoting a
-// user never leaves zero canEditConfig users in the system.
-export async function hasAnotherConfigEditor(excludingUserId: string): Promise<boolean> {
-  const remaining = await prisma.user.count({
-    where: { canEditConfig: true, id: { not: excludingUserId } },
-  });
-  return remaining > 0;
 }
