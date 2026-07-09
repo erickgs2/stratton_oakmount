@@ -15,6 +15,7 @@ services:
       - BITSO_API_KEY=${BITSO_API_KEY}
       - BITSO_API_SECRET=${BITSO_API_SECRET}
       - BITSO_API_HOSTNAME=${BITSO_API_HOSTNAME:-api.bitso.com}
+      - JWT_SECRET=${JWT_SECRET}
 
   web:
     build: ./frontend
