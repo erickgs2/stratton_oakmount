@@ -4,6 +4,7 @@ import { bitsoClient } from '@/lib/bitso';
 import { getCryptoMarketData, recordCryptoPriceSnapshot } from '@/lib/bitso-market-data';
 import { prisma } from '@/lib/prisma';
 import { writeBotLog } from '@/lib/bot-logger';
+import { ClaudeDecision, parseClaudeDecision } from '@/lib/claude-decision-parser';
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -13,13 +14,6 @@ export interface AgentCycleResult {
   confidence: number;
   reason: string;
   executed: boolean;
-}
-
-interface ClaudeDecision {
-  action: 'buy' | 'sell' | 'hold';
-  quantity: number;
-  confidence: number;
-  reason: string;
 }
 
 const SYSTEM_PROMPT_CRYPTO = `You are an expert cryptocurrency trader on Bitso, a CNBV-regulated Mexican exchange.
@@ -432,14 +426,8 @@ export async function runCryptoAgentCycle(
 
   const message = await anthropic.messages.create(ctx.request);
 
-  const rawText  = message.content[0].type === 'text' ? message.content[0].text : '';
-  const cleanText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-  let decision: ClaudeDecision;
-  try {
-    decision = JSON.parse(cleanText) as ClaudeDecision;
-  } catch {
-    decision = { action: 'hold', quantity: 0, confidence: 0, reason: `Parse error: ${rawText}` };
-  }
+  const rawText = message.content[0].type === 'text' ? message.content[0].text : '';
+  const decision: ClaudeDecision = parseClaudeDecision(rawText);
 
   const maxInvestment = effectiveCapital * 0.20;
   const maxQuantity   = lastPrice > 0 ? maxInvestment / lastPrice : 0;

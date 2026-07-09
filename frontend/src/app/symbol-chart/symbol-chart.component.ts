@@ -35,13 +35,23 @@ export class SymbolChartComponent implements OnInit, OnChanges {
   ngOnInit(): void { this.load(); }
   ngOnChanges(): void { this.load(); }
 
+  // true once buildChart() produced an actual line — false while a symbol
+  // (crypto, typically) hasn't accumulated enough history yet.
+  get hasEnoughHistory(): boolean {
+    return this.polyline !== '';
+  }
+
   private load(): void {
     if (!this.symbol) return;
     this.loading = true;
     this.error = false;
+    this.polyline = '';
+    this.area = '';
     const request = this.market === 'USA'
       ? this.marketDataService.getUSAData(this.symbol)
-      : this.marketDataService.getMXData(this.symbol);
+      : this.market === 'CRYPTO'
+        ? this.marketDataService.getCryptoData(this.symbol)
+        : this.marketDataService.getMXData(this.symbol);
     request.subscribe({
       next: data => {
         this.data = data;
