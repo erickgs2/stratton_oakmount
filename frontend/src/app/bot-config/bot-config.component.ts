@@ -21,7 +21,7 @@ import { AuthService } from '../core/services/auth.service';
 
 const MX_SYMBOLS = ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'];
 const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
-const CRYPTO_SYMBOLS = ['btc_mxn', 'eth_mxn'];
+const CRYPTO_SYMBOLS = ['btc_mxn', 'eth_mxn', 'usdc_mxn'];
 const BOT_CONFIG_TAB_KEY = 'bot-config-active-tab';
 
 @Component({
