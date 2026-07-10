@@ -10,5 +10,7 @@ export interface Trade {
   currency: 'MXN' | 'USD';
   reason: string;
   ibkrOrderId?: string;
+  source?: 'agent' | 'manual';
+  placedByEmail?: string | null;
   createdAt: string;
 }
