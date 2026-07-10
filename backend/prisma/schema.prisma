@@ -7,17 +7,18 @@ datasource db {
 }
 
 model Trade {
-  id          String   @id @default(cuid())
-  symbol      String
-  market      String   // "MX" | "USA"
-  action      String   // "buy" | "sell" | "hold"
-  quantity    Float
-  price       Float
-  currency    String   // "MXN" | "USD"
-  reason      String
-  ibkrOrderId String?
-  source      String   @default("agent") // "agent" | "manual"
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  symbol        String
+  market        String   // "MX" | "USA"
+  action        String   // "buy" | "sell" | "hold"
+  quantity      Float
+  price         Float
+  currency      String   // "MXN" | "USD"
+  reason        String
+  ibkrOrderId   String?
+  source        String   @default("agent") // "agent" | "manual"
+  placedByEmail String?  // set for source:"manual"; null for source:"agent"
+  createdAt     DateTime @default(now())
 }
 
 model BotConfig {
