@@ -1,0 +1,19 @@
+.side-toggle {
+  display: flex;
+  margin-bottom: 16px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.price-line, .hint-line {
+  margin: 4px 0;
+  font-size: 0.9rem;
+  color: var(--text-muted, #666);
+}
+
+.error-message {
+  color: var(--mat-sys-error, #d32f2f);
+  margin-top: 8px;
+}

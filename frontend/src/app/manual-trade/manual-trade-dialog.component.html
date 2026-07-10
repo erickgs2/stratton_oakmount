@@ -1,0 +1,60 @@
+<h2 mat-dialog-title>Manual Trade — {{ data.market }}</h2>
+
+<mat-dialog-content>
+  <ng-container *ngIf="step === 'form'">
+    <mat-button-toggle-group [(ngModel)]="side" name="side" class="side-toggle">
+      <mat-button-toggle value="buy">Buy</mat-button-toggle>
+      <mat-button-toggle value="sell">Sell</mat-button-toggle>
+    </mat-button-toggle-group>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Symbol</mat-label>
+      <mat-select [(ngModel)]="symbol" (selectionChange)="onSymbolChange()">
+        <mat-option *ngFor="let s of symbols" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <p class="price-line">
+      <ng-container *ngIf="loadingPrice">Loading price…</ng-container>
+      <ng-container *ngIf="!loadingPrice && livePrice !== null">Current price: {{ livePrice | number:'1.2-2' }}</ng-container>
+    </p>
+
+    <p class="hint-line">
+      <ng-container *ngIf="side === 'buy'">Available funds: {{ data.availableFunds | number:'1.2-2' }}</ng-container>
+      <ng-container *ngIf="side === 'sell'">Currently held: {{ heldQuantity }}</ng-container>
+    </p>
+
+    <mat-form-field *ngIf="!isCrypto" appearance="outline" class="full-width">
+      <mat-label>Quantity (shares)</mat-label>
+      <input matInput type="number" [(ngModel)]="quantity" min="1" step="1">
+    </mat-form-field>
+
+    <mat-form-field *ngIf="isCrypto" appearance="outline" class="full-width">
+      <mat-label>Amount (MXN)</mat-label>
+      <input matInput type="number" [(ngModel)]="mxnAmount" min="0.01" step="0.01">
+    </mat-form-field>
+
+    <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </ng-container>
+
+  <ng-container *ngIf="step === 'confirm'">
+    <p><strong>{{ side === 'buy' ? 'Buy' : 'Sell' }}</strong> {{ symbol }}</p>
+    <p *ngIf="!isCrypto">Quantity: {{ quantity }} shares</p>
+    <p *ngIf="isCrypto">Amount: {{ mxnAmount | number:'1.2-2' }} MXN</p>
+    <p>Estimated price: {{ livePrice | number:'1.2-2' }}</p>
+    <p>Estimated total: {{ estimatedTotal | number:'1.2-2' }}</p>
+
+    <p class="error-message" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </ng-container>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <ng-container *ngIf="step === 'form'">
+    <button mat-button mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" (click)="reviewOrder()">Review</button>
+  </ng-container>
+  <ng-container *ngIf="step === 'confirm'">
+    <button mat-button (click)="back()" [disabled]="submitting">Back</button>
+    <button mat-raised-button color="primary" (click)="confirmOrder()" [disabled]="submitting">Confirm &amp; Place Order</button>
+  </ng-container>
+</mat-dialog-actions>
