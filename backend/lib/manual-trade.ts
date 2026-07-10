@@ -34,7 +34,7 @@ export interface ManualTradeResult {
 const ELIGIBLE_SYMBOLS: Record<Market, string[]> = {
   MX: ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'],
   USA: ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'],
-  CRYPTO: ['btc_mxn', 'eth_mxn', 'usdc_mxn'],
+  CRYPTO: ['btc_mxn', 'eth_mxn', 'usdt_mxn'],
 };
 
 export async function executeManualTrade(params: ManualTradeParams): Promise<ManualTradeResult> {
