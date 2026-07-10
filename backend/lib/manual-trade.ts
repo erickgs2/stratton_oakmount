@@ -76,9 +76,18 @@ async function executeStockManualTrade(params: ManualTradeParams): Promise<Manua
     }
   }
 
-  const ibkrOrderId = await ibkrClient.placeOrder({
-    conid, side: side === 'buy' ? 'BUY' : 'SELL', quantity, market: market as 'MX' | 'USA',
-  });
+  let ibkrOrderId: string | undefined;
+  try {
+    ibkrOrderId = await ibkrClient.placeOrder({
+      conid, side: side === 'buy' ? 'BUY' : 'SELL', quantity, market: market as 'MX' | 'USA',
+    });
+  } catch (err) {
+    return {
+      success: false,
+      error: `IBKR rejected the order: ${(err as Error).message}`,
+      errorType: 'broker_rejected',
+    };
+  }
   if (!ibkrOrderId) {
     return { success: false, error: 'IBKR rejected the order', errorType: 'broker_rejected' };
   }
@@ -129,7 +138,16 @@ async function executeCryptoManualTrade(params: ManualTradeParams): Promise<Manu
     }
   }
 
-  const orderId = await bitsoClient.placeOrder({ book: symbol, side, major: coinQuantity.toFixed(8) });
+  let orderId: string | undefined;
+  try {
+    orderId = await bitsoClient.placeOrder({ book: symbol, side, major: coinQuantity.toFixed(8) });
+  } catch (err) {
+    return {
+      success: false,
+      error: `Bitso rejected the order: ${(err as Error).message}`,
+      errorType: 'broker_rejected',
+    };
+  }
   if (!orderId) {
     return { success: false, error: 'Bitso rejected the order', errorType: 'broker_rejected' };
   }

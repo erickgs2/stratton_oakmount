@@ -104,6 +104,21 @@ describe('executeManualTrade — MX/USA stock path', () => {
     expect(prisma.trade.create).not.toHaveBeenCalled();
   });
 
+  it('catches a thrown IBKR placeOrder error and classifies it as broker_rejected', async () => {
+    (isMarketOpen as jest.Mock).mockReturnValue(true);
+    (ibkrClient.getPositions as jest.Mock).mockResolvedValue([
+      { conid: 1, ticker: 'AAPL', position: 5, avgCost: 100, mktValue: 500, unrealizedPnl: 0 },
+    ]);
+    (getUSAMarketData as jest.Mock).mockResolvedValue({ symbol: 'AAPL', lastPrice: 100, changePct: 0, volume: 0, history: [] });
+    (ibkrClient.placeOrder as jest.Mock).mockRejectedValue(new Error('IBKR API error 500: contract not tradeable'));
+    const result = await executeManualTrade({
+      market: 'USA', symbol: 'AAPL', side: 'sell', quantity: 2, placedByEmail: 'a@b.com',
+    });
+    expect(result.success).toBe(false);
+    expect(result.errorType).toBe('broker_rejected');
+    expect(prisma.trade.create).not.toHaveBeenCalled();
+  });
+
   it('places a buy order and records the trade on success', async () => {
     (isMarketOpen as jest.Mock).mockReturnValue(true);
     (ibkrClient.getPositions as jest.Mock).mockResolvedValue([]);
@@ -167,6 +182,22 @@ describe('executeManualTrade — CRYPTO path', () => {
     });
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/insufficient btc/i);
+  });
+
+  it('catches a thrown Bitso placeOrder error and classifies it as broker_rejected', async () => {
+    (bitsoClient.getTicker as jest.Mock).mockResolvedValue({
+      book: 'btc_mxn', last: 1000000, bid: 0, ask: 0, high: 0, low: 0, volume: 0, change24: 0, createdAt: '',
+    });
+    (bitsoClient.getBalances as jest.Mock).mockResolvedValue([
+      { currency: 'mxn', available: 5000, locked: 0, total: 5000 },
+    ]);
+    (bitsoClient.placeOrder as jest.Mock).mockRejectedValue(new Error('Bitso API error 400: invalid order'));
+    const result = await executeManualTrade({
+      market: 'CRYPTO', symbol: 'btc_mxn', side: 'buy', mxnAmount: 1000, placedByEmail: 'a@b.com',
+    });
+    expect(result.success).toBe(false);
+    expect(result.errorType).toBe('broker_rejected');
+    expect(prisma.trade.create).not.toHaveBeenCalled();
   });
 
   it('places a buy order, converting MXN amount to coin quantity', async () => {
