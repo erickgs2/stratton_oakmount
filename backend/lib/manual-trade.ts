@@ -27,7 +27,24 @@ export interface ManualTradeResult {
   errorType?: 'validation' | 'broker_rejected';
 }
 
+// Mirrors frontend/src/app/core/models/market-symbols.ts — this backend
+// and the Angular frontend are separate TypeScript projects with no shared
+// package, so these lists are intentionally duplicated. Keep both in sync
+// if the eligible symbol/coin set ever changes.
+const ELIGIBLE_SYMBOLS: Record<Market, string[]> = {
+  MX: ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'],
+  USA: ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'],
+  CRYPTO: ['btc_mxn', 'eth_mxn', 'usdc_mxn'],
+};
+
 export async function executeManualTrade(params: ManualTradeParams): Promise<ManualTradeResult> {
+  if (!ELIGIBLE_SYMBOLS[params.market].includes(params.symbol)) {
+    return {
+      success: false,
+      error: `${params.symbol} is not an eligible symbol for ${params.market}`,
+      errorType: 'validation',
+    };
+  }
   if (params.market === 'CRYPTO') return executeCryptoManualTrade(params);
   return executeStockManualTrade(params);
 }
@@ -92,14 +109,23 @@ async function executeStockManualTrade(params: ManualTradeParams): Promise<Manua
     return { success: false, error: 'IBKR rejected the order', errorType: 'broker_rejected' };
   }
 
-  const trade = await prisma.trade.create({
-    data: {
-      symbol, market, action: side, quantity, price: lastPrice,
-      currency: market === 'MX' ? 'MXN' : 'USD',
-      reason: `Manual ${side} by ${placedByEmail}`,
-      ibkrOrderId, source: 'manual', placedByEmail,
-    },
-  });
+  let trade;
+  try {
+    trade = await prisma.trade.create({
+      data: {
+        symbol, market, action: side, quantity, price: lastPrice,
+        currency: market === 'MX' ? 'MXN' : 'USD',
+        reason: `Manual ${side} by ${placedByEmail}`,
+        ibkrOrderId, source: 'manual', placedByEmail,
+      },
+    });
+  } catch (err) {
+    console.error(
+      `[manual-trade] CRITICAL: order placed successfully (broker order #${ibkrOrderId}, ${market} ${side} ${quantity} ${symbol} @ ${lastPrice}, placed by ${placedByEmail}) but failed to record in the Trade table:`,
+      err,
+    );
+    return { success: true, trade: undefined };
+  }
 
   return { success: true, trade };
 }
@@ -152,17 +178,26 @@ async function executeCryptoManualTrade(params: ManualTradeParams): Promise<Manu
     return { success: false, error: 'Bitso rejected the order', errorType: 'broker_rejected' };
   }
 
-  const trade = await prisma.trade.create({
-    data: {
-      symbol, market: 'CRYPTO', action: side, quantity: coinQuantity, price: lastPrice,
-      currency: 'MXN',
-      reason: `Manual ${side} by ${placedByEmail}`,
-      // Trade.ibkrOrderId is a generically-named opaque order-id column,
-      // already reused for Bitso order ids by crypto-agent.ts — same
-      // convention here rather than adding a new column.
-      ibkrOrderId: orderId, source: 'manual', placedByEmail,
-    },
-  });
+  let trade;
+  try {
+    trade = await prisma.trade.create({
+      data: {
+        symbol, market: 'CRYPTO', action: side, quantity: coinQuantity, price: lastPrice,
+        currency: 'MXN',
+        reason: `Manual ${side} by ${placedByEmail}`,
+        // Trade.ibkrOrderId is a generically-named opaque order-id column,
+        // already reused for Bitso order ids by crypto-agent.ts — same
+        // convention here rather than adding a new column.
+        ibkrOrderId: orderId, source: 'manual', placedByEmail,
+      },
+    });
+  } catch (err) {
+    console.error(
+      `[manual-trade] CRITICAL: order placed successfully (broker order #${orderId}, CRYPTO ${side} ${coinQuantity} ${symbol} @ ${lastPrice}, placed by ${placedByEmail}) but failed to record in the Trade table:`,
+      err,
+    );
+    return { success: true, trade: undefined };
+  }
 
   return { success: true, trade };
 }

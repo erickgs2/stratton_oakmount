@@ -20,17 +20,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'market, symbol, and side ("buy"|"sell") are required' }, { status: 400 });
   }
 
-  const result = await executeManualTrade({
-    market: body.market,
-    symbol: body.symbol,
-    side: body.side,
-    quantity: body.quantity,
-    mxnAmount: body.mxnAmount,
-    // requirePermission already returned above if context were null, so
-    // this is guaranteed non-null here — TS can't see that control-flow
-    // link across the two calls, hence the assertion.
-    placedByEmail: context!.email,
-  });
+  let result;
+  try {
+    result = await executeManualTrade({
+      market: body.market,
+      symbol: body.symbol,
+      side: body.side,
+      quantity: body.quantity,
+      mxnAmount: body.mxnAmount,
+      // requirePermission already returned above if context were null, so
+      // this is guaranteed non-null here — TS can't see that control-flow
+      // link across the two calls, hence the assertion.
+      placedByEmail: context!.email,
+    });
+  } catch (err) {
+    console.error('[manual-trade] unexpected error in executeManualTrade:', err);
+    return NextResponse.json({ error: 'An unexpected error occurred, please try again' }, { status: 500 });
+  }
 
   if (!result.success) {
     const status = result.errorType === 'broker_rejected' ? 502 : 400;
