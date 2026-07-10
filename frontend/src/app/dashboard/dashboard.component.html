@@ -57,6 +57,12 @@
     </ng-template>
   </div>
 
+  <button mat-raised-button color="primary" class="manual-trade-btn"
+          *ngIf="hasPermission('canManualTrade')"
+          (click)="openManualTradeDialog(activeMarket)">
+    Manual Trade
+  </button>
+
   <div *ngIf="!loading && !error && portfolio" class="cards-row">
     <mat-card>
       <mat-card-header>
@@ -202,6 +208,12 @@
     <mat-icon class="status-icon open">wifi</mat-icon>
     <span>Live · updating every 30s · crypto trades 24/7, no market hours</span>
   </div>
+
+  <button mat-raised-button color="primary" class="manual-trade-btn"
+          *ngIf="hasPermission('canManualTrade')"
+          (click)="openManualTradeDialog('CRYPTO')">
+    Manual Trade
+  </button>
 
   <div *ngIf="!cryptoLoading && !cryptoError && cryptoPortfolio" class="cards-row">
     <mat-card>

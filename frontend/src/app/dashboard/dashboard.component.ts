@@ -9,7 +9,10 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../core/services/auth.service';
+import { ManualTradeDialogComponent, ManualTradeDialogData } from '../manual-trade/manual-trade-dialog.component';
 import { PortfolioService } from '../core/services/portfolio.service';
 import { BotService } from '../core/services/bot.service';
 import { OrderService } from '../core/services/order.service';
@@ -33,7 +36,7 @@ const DASHBOARD_TAB_KEY = 'dashboard-active-tab';
     CommonModule, FormsModule,
     MatTabsModule, MatCardModule, MatTableModule,
     MatSlideToggleModule, MatBadgeModule, MatIconModule,
-    MatProgressSpinnerModule,
+    MatProgressSpinnerModule, MatDialogModule,
     SymbolChartComponent,
   ],
   templateUrl: './dashboard.component.html',
@@ -67,6 +70,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private pnlService: PnlService,
     private cryptoPortfolioService: CryptoPortfolioService,
     private tabPersistence: TabPersistenceService,
+    private dialog: MatDialog,
+    private authService: AuthService,
   ) {
     this.activeTabIndex = this.tabPersistence.getSavedIndex(DASHBOARD_TAB_KEY, 2);
     this.activeMarket = this.indexToMarket(this.activeTabIndex);
@@ -224,5 +229,40 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   get activeSymbols(): string[] {
     return this.activeBotConfig?.symbols ?? [];
+  }
+
+  hasPermission(permission: 'canEditConfig' | 'canManualTrade'): boolean {
+    return this.authService.hasPermission(permission);
+  }
+
+  openManualTradeDialog(market: Market): void {
+    const availableFunds = market === 'CRYPTO'
+      ? this.cryptoPortfolio?.availableFunds ?? 0
+      : this.portfolio?.summary.availableFunds ?? 0;
+    const heldQuantities: Record<string, number> = market === 'CRYPTO'
+      ? Object.fromEntries((this.cryptoPortfolio?.positions ?? []).map(p => [p.book, p.quantity]))
+      : Object.fromEntries((this.portfolio?.positions ?? []).map(p => [p.ticker, p.position]));
+
+    const dialogRef = this.dialog.open(ManualTradeDialogComponent, {
+      width: '90vw',
+      maxWidth: '480px',
+      data: { market, availableFunds, heldQuantities } as ManualTradeDialogData,
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) this.refreshPortfolio();
+    });
+  }
+
+  private refreshPortfolio(): void {
+    this.subs.add(
+      this.portfolioService.getPortfolio().subscribe(p => {
+        this.portfolio = p;
+        this.portfolioUpdatedAt = new Date();
+      })
+    );
+    this.subs.add(
+      this.cryptoPortfolioService.getPortfolio().subscribe(p => { this.cryptoPortfolio = p; })
+    );
   }
 }
