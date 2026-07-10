@@ -16,12 +16,10 @@ import { BotService } from '../core/services/bot.service';
 import { SettingsService } from '../core/services/settings.service';
 import { BotConfig } from '../core/models/bot-config.model';
 import { Market } from '../core/models/market.model';
+import { MX_SYMBOLS, USA_SYMBOLS, CRYPTO_SYMBOLS } from '../core/models/market-symbols';
 import { TabPersistenceService } from '../core/services/tab-persistence.service';
 import { AuthService } from '../core/services/auth.service';
 
-const MX_SYMBOLS = ['AMXL', 'FEMSAUBD', 'WALMEX', 'BIMBOA', 'GCARSOA1'];
-const USA_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN'];
-const CRYPTO_SYMBOLS = ['btc_mxn', 'eth_mxn', 'usdc_mxn'];
 const BOT_CONFIG_TAB_KEY = 'bot-config-active-tab';
 
 @Component({
